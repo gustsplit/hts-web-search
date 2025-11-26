@@ -1,18 +1,19 @@
-# Python
+# Python bytecode
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
+
+# Virtualenv
+.venv/
+venv/
+
+# Logs
+logs/
+*.log
 
 # 환경 파일
 .env
 
-# 가상환경
-.venv/
-venv/
-
-# IDE / Editor
+# VS Code 설정
 .vscode/
-.idea/
-
-# 기타
-.DS_Store
