@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>US HTS Code Finder (PoC)</title>
+  <style>
+    :root {
+      --primary: #3182f6;
+      --primary-dark: #2563d9;
+      --bg: #f5f7fb;
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --border-soft: #d1d5db;
+      --card-bg: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+        sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+
+    .app-shell {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+      padding: 24px 28px 28px;
+      margin-bottom: 18px;
+    }
+
+    .app-header {
+      margin-bottom: 18px;
+    }
+
+    .app-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--primary);
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .app-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    /* Form */
+
+    form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+      margin-top: 10px;
+      margin-bottom: 22px;
+    }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #111827;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease,
+        background-color 0.15s ease;
+      background: #f9fafb;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(49, 130, 246, 0.35);
+      background: #ffffff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+      max-height: 200px;
+      line-height: 1.4;
+    }
+
+    .form-row-inline {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 12px;
+    }
+
+    .button-row {
+      margin-top: 4px;
+    }
+
+    button {
+      padding: 9px 20px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--primary);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 10px 25px rgba(49, 130, 246, 0.35);
+      transition: background-color 0.15s ease, box-shadow 0.15s ease,
+        transform 0.05s ease;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      box-shadow: 0 14px 30px rgba(37, 99, 217, 0.45);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 18px rgba(37, 99, 217, 0.38);
+    }
+
+    .btn-icon {
+      font-size: 16px;
+    }
+
+    /* Results */
+
+    .results-section-title {
+      margin-top: 10px;
+      margin-bottom: 6px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    #results {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 8px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f9fafb;
+    }
+
+    thead {
+      background: #eef3ff;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    td {
+      font-size: 13px;
+      color: #111827;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f3f4ff;
+    }
+
+    .error-box {
+      background: #fff4f5;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      color: #b91c1c;
+      font-size: 12px;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      background: #e5f0ff;
+      color: #1d4ed8;
+      margin-left: 4px;
+    }
+
+    /* Duty simulation card */
+
+    .duty-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .duty-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 10px;
+    }
+
+    .duty-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .duty-result {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .badge-hts {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: #047857;
+      margin-left: 4px;
+    }
+
+    .muted {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* HTS 툴팁 */
+    .hts-tooltip {
+      position: fixed;
+      z-index: 9999;
+      background: #111827;
+      color: #f9fafb;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      max-width: 320px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -8px);
+      transition: opacity 0.08s ease;
+      white-space: normal;
+    }
+
+    .hts-tooltip.visible {
+      opacity: 0.97;
+    }
+
+    .hts-tooltip table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .hts-tooltip th,
+    .hts-tooltip td {
+      padding: 2px 0;
+      border: none;
+      font-size: 11px;
+    }
+
+    .hts-tooltip th {
+      color: #9ca3af;
+      text-align: left;
+    }
+
+    .hts-tooltip td.code {
+      font-weight: 600;
+      padding-right: 8px;
+      white-space: nowrap;
+    }
+
+    /* =========================
+       이메일 Step / 미리보기 스타일
+       ========================= */
+
+    .email-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .email-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+
+    .email-inline-row {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 10px;
+      align-items: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .email-preview-box {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      font-size: 12px;
+      color: #111827;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    .email-preview-header {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .email-preview-meta {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .badge-step {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      background: #eef3ff;
+      color: #1d4ed8;
+      margin-left: 4px;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 18px 16px 20px;
+      }
+
+      .form-row-inline {
+        grid-template-columns: 1fr;
+      }
+
+      .duty-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .email-inline-row {
+        grid-template-columns: 1fr;
+      }
+
+      th,
+      td {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 메인 검색 카드 -->
+    <div class="card">
+      <header class="app-header">
+        <div class="app-title-row">
+          <div class="logo-dot"></div>
+          <h1>US HTS Code Finder</h1>
+        </div>
+        <div class="app-subtitle">
+          입력하신 상품 정보를 기반으로 미국 HTS 후보 코드를 추천해 드려요.
+        </div>
+      </header>
+
+      <form id="hts-form">
+        <div>
+          <div class="field-label">제품명 (Product Name)</div>
+          <input type="text" id="product_name" placeholder="예: 옥수수" required />
+        </div>
+
+        <div class="form-row-inline">
+          <div>
+            <div class="field-label">수출자 HS 코드 (한국, 선택)</div>
+            <input type="text" id="exporter_hs" placeholder="예: 1005.90" />
+          </div>
+          <div>
+            <div class="field-label">원산지 (Country of Origin)</div>
+            <input type="text" id="country_of_origin" placeholder="예: Korea" required />
+          </div>
+        </div>
+
+        <div>
+          <div class="field-label">제품 설명 (Product Description)</div>
+          <textarea
+            id="description"
+            rows="4"
+            placeholder="예: 조리하지 않은 날것의 식용 옥수수"
+            required
+          ></textarea>
+        </div>
+
+        <div class="button-row">
+          <button type="submit">
+            <span class="btn-icon">🔍</span>
+            <span>HTS 코드 검색하기</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="results-section-title">
+        HTS 코드 추천 결과
+        <span class="badge-pill">LLM 기반 후보 리스트</span>
+      </div>
+      <div id="results"></div>
+    </div>
+
+    <!-- 관세 시뮬레이션 카드 -->
+    <div class="card hidden" id="duty-section">
+      <div class="duty-card-title">실제 얼마나 관세가 나올지 궁금하신가요?</div>
+      <div class="duty-subtitle">
+        위에서 선택하신 HTS 코드 기준으로, 수량과 단가(USD)를 입력해 예상 관세를 간단히 계산해 보세요.
+      </div>
+
+      <div class="muted" id="fx-info">
+        환율 정보를 불러오는 중입니다...
+      </div>
+      <div class="muted" id="selected-hts-info">
+        아직 HTS 코드를 선택하지 않으셨어요. 표에서 하나를 선택해 주세요.
+      </div>
+
+      <div class="duty-grid">
+        <div>
+          <div class="field-label">수량</div>
+          <input type="number" id="qty" min="1" placeholder="예: 100" />
+        </div>
+        <div>
+          <div class="field-label">단가 (USD $)</div>
+          <input type="number" id="unit_price" min="0" step="0.01" placeholder="예: 50" />
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button type="button" id="calc-duty-btn">
+            <span class="btn-icon">📊</span>
+            <span>관세 계산하기</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="duty-result" id="duty-result"></div>
+      <div class="muted">
+        * 실제 관세는 세관 신고 내용, FTA, 추가 세율 등에 따라 달라질 수 있으며, 이 계산은 참고용 시뮬레이션입니다.
+      </div>
+    </div>
+
+    <!-- 이메일 Step 카드 (새로운 Step) -->
+    <div class="card hidden" id="email-section">
+      <div class="email-card-title">
+        US HTS code 및 계산된 내용을 이메일로 받아보시겠어요?
+        <span class="badge-step">Step 3 · Email</span>
+      </div>
+      <div class="email-subtitle">
+        지금까지 입력하신 상품 정보, 선택하신 HTS 코드, 그리고 방금 계산한 관세 금액을 한 번에 정리해서
+        메일 초안으로 만들어 드려요.
+      </div>
+
+      <div class="email-inline-row">
+        <div>
+          <div class="field-label">이메일 주소</div>
+          <input type="email" id="email_to" placeholder="예: name@example.com" />
+        </div>
+        <div>
+          <button type="button" id="email-preview-btn">
+            <span class="btn-icon">📨</span>
+            <span>이메일 미리보기 만들기</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="muted">
+        * 실제 발송 전에, 아래에서 메일 내용을 먼저 확인하실 수 있어요.
+      </div>
+
+      <div id="email-preview" class="email-preview-box hidden">
+        <!-- JS에서 내용 채움 -->
+      </div>
+
+      <div style="margin-top:10px;">
+        <button type="button" id="email-send-btn" class="hidden">
+          <span class="btn-icon">✅</span>
+          <span>이 내용으로 이메일 보내기</span>
+        </button>
+        <div id="email-send-status" class="muted hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 면책 고지문 -->
+  <div style="font-size:11px; color:#888; margin-top:30px; text-align:center;">
+    * 본 서비스의 HTS 코드 및 관세율은 참고용으로 제공되며,
+    실제 세율 및 분류는 미국 CBP 및 관세당국의 최종 결정에 따릅니다.
+    본 정보에 기반한 모든 판단 및 책임은 사용자에게 있습니다.
+  </div>
+
+  <!-- HTS 코드 구조 툴팁 -->
+  <div id="hts-tooltip" class="hts-tooltip"></div>
+
+  <script>
+    const form = document.getElementById("hts-form");
+    const resultsEl = document.getElementById("results");
+    const dutySection = document.getElementById("duty-section");
+    const selectedInfoEl = document.getElementById("selected-hts-info");
+    const dutyResultEl = document.getElementById("duty-result");
+    const fxInfoEl = document.getElementById("fx-info");
+    const calcBtn = document.getElementById("calc-duty-btn");
+    const qtyInput = document.getElementById("qty");
+    const unitPriceInput = document.getElementById("unit_price");
+    const htsTooltip = document.getElementById("hts-tooltip");
+
+    const emailSection = document.getElementById("email-section");
+    const emailToInput = document.getElementById("email_to");
+    const emailPreviewBtn = document.getElementById("email-preview-btn");
+    const emailPreviewEl = document.getElementById("email-preview");
+    const emailSendBtn = document.getElementById("email-send-btn");
+    const emailSendStatusEl = document.getElementById("email-send-status");
+
+    // 마지막 후보들 저장 (라디오 선택 시 참조)
+    let lastCandidates = [];
+    // 선택된 후보 index
+    let lastSelectedIndex = -1;
+    // 관세 계산 결과 저장
+    let lastDutyCalc = null;
+    // USD-KRW 환율
+    let usdKrwRate = null;
+    // HTS 설명 캐시
+    const htsExplainCache = {};
+    // 마지막 이메일 초안 저장 (발송 시 사용)
+    let lastEmailDraft = null;
+
+    function formatNumber(n) {
+      if (isNaN(n)) return "";
+      return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    // "0%", "4.5%" 같은 문자열에서 숫자만 추출해서 비율(0.0~1.0)로 변환
+    function parseRate(rateStr) {
+      if (!rateStr) return 0;
+      const m = String(rateStr).match(/[\d.]+/);
+      if (!m) return 0;
+      const v = parseFloat(m[0]);
+      if (isNaN(v)) return 0;
+      return v / 100.0;
+    }
+
+    // 백엔드에서 USD-KRW 환율 가져오기
+    async function fetchFxRate() {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/usd-krw");
+        const data = await res.json();
+        if (data.rate) {
+          usdKrwRate = data.rate;
+          fxInfoEl.textContent =
+            `현재 적용 환율: 1 USD ≈ ${usdKrwRate.toFixed(2)}원`;
+        } else {
+          usdKrwRate = null;
+          fxInfoEl.textContent =
+            "환율 정보를 불러오지 못했습니다. (임시로 원화 환산은 표시되지 않을 수 있습니다)";
+        }
+      } catch (err) {
+        console.error(err);
+        usdKrwRate = null;
+        fxInfoEl.textContent =
+          "환율 정보를 불러오지 못했습니다. (임시로 원화 환산은 표시되지 않을 수 있습니다)";
+      }
+    }
+
+    // 페이지 로딩 시 환율 먼저 가져오기
+    fetchFxRate();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      resultsEl.innerHTML =
+        '<span class="loading-text">LLM이 HTS 후보를 분석하는 중입니다...</span>';
+      dutyResultEl.textContent = "";
+      selectedInfoEl.textContent =
+        "아직 HTS 코드를 선택하지 않으셨어요. 표에서 하나를 선택해 주세요.";
+      emailSection.classList.add("hidden");
+      emailPreviewEl.classList.add("hidden");
+      emailPreviewEl.innerHTML = "";
+      emailSendBtn.classList.add("hidden");
+      emailSendStatusEl.classList.add("hidden");
+      emailSendStatusEl.textContent = "";
+      lastSelectedIndex = -1;
+      lastDutyCalc = null;
+      lastEmailDraft = null;
+
+      const payload = {
+        product_name: document.getElementById("product_name").value,
+        exporter_hs: document.getElementById("exporter_hs").value || null,
+        description: document.getElementById("description").value,
+        country_of_origin: document.getElementById("country_of_origin").value,
+      };
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/search_hts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          resultsEl.innerHTML =
+            '<div class="error-box">Error: ' +
+            data.error +
+            (data.raw ? "\n\nRaw:\n" + data.raw : "") +
+            "</div>";
+          dutySection.classList.add("hidden");
+          return;
+        }
+
+        const candidates = data.candidates || [];
+        lastCandidates = candidates;
+
+        // 후보 title/reason 한국어 번역
+        await translateCandidatesToKorean(lastCandidates);
+
+        if (candidates.length === 0) {
+          resultsEl.innerHTML =
+            '<span class="loading-text">추천된 HTS 코드가 없습니다.</span>';
+          dutySection.classList.add("hidden");
+          return;
+        }
+
+        // 테이블 생성
+        let tableHtml = `
+          <table>
+            <thead>
+              <tr>
+                <th>선택</th>
+                <th>신뢰도</th>
+                <th>HTS Code</th>
+                <th>품목명</th>
+                <th>관세율</th>
+                <th>분류 설명</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        candidates.forEach((c, idx) => {
+          const confText =
+            c.confidence !== undefined && c.confidence !== null
+              ? `${c.confidence}%`
+              : "";
+          tableHtml += `
+            <tr>
+              <td>
+                <input type="radio" name="hts_choice" value="${idx}" />
+              </td>
+              <td>${confText}</td>
+              <td class="hts-code-cell" data-hts="${c.hts_code || ""}">
+                ${c.hts_code || ""}
+              </td>
+              <td>${c.title || ""}</td>
+              <td>${c.estimated_tariff_rate || ""}</td>
+              <td>${c.reason || ""}</td>
+            </tr>
+          `;
+        });
+
+        tableHtml += "</tbody></table>";
+        resultsEl.innerHTML = tableHtml;
+
+        // 관세 시뮬레이션 UI 보이기 + 살짝 스크롤
+        dutySection.classList.remove("hidden");
+        setTimeout(() => {
+          dutySection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 150);
+
+        // 라디오 버튼 change 핸들러 등록
+        document.getElementsByName("hts_choice").forEach((radio) => {
+          radio.addEventListener("change", () => {
+            const idx = parseInt(radio.value, 10);
+            const item = lastCandidates[idx];
+            if (!item) return;
+            lastSelectedIndex = idx;
+            const rateStr = item.estimated_tariff_rate || "N/A";
+            selectedInfoEl.innerHTML =
+              `선택된 HTS: <strong>${item.hts_code || ""}</strong>` +
+              `<span class="badge-hts">관세율: ${rateStr}</span>`;
+            dutyResultEl.textContent = "";
+            lastDutyCalc = null;
+            emailSection.classList.add("hidden");
+            emailPreviewEl.classList.add("hidden");
+            emailPreviewEl.innerHTML = "";
+            emailSendBtn.classList.add("hidden");
+            emailSendStatusEl.classList.add("hidden");
+            emailSendStatusEl.textContent = "";
+            lastEmailDraft = null;
+          });
+        });
+
+        // HTS 코드 셀 호버 핸들러 연결
+        attachHTSHoverHandlers();
+      } catch (err) {
+        console.error(err);
+        resultsEl.innerHTML =
+          '<div class="error-box">Error: ' + String(err) + "</div>";
+        dutySection.classList.add("hidden");
+      }
+    });
+
+    function buildTooltipHtml(segments) {
+      if (!segments || !segments.length) {
+        return "코드 구조 정보를 불러오지 못했습니다.";
+      }
+
+      let html = `
+        <div style="margin-bottom:4px; font-weight:600; font-size:11px;">
+          코드 구조 / 분류 체계
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:90px;">코드 구조</th>
+              <th>의미</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      segments.forEach(seg => {
+        html += `
+          <tr>
+            <td class="code">${seg.code_part || ""}</td>
+            <td>${seg.meaning_ko || ""}</td>
+          </tr>
+        `;
+      });
+
+      html += "</tbody></table>";
+      return html;
+    }
+
+    async function fetchHTSExplain(htsCode) {
+      if (!htsCode) return null;
+
+      if (htsExplainCache[htsCode]) {
+        return htsExplainCache[htsCode];
+      }
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/explain_hts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hts_code: htsCode })
+        });
+        const data = await res.json();
+        if (data.error) {
+          console.error("explain_hts error:", data.error);
+          return null;
+        }
+        htsExplainCache[htsCode] = data.segments || [];
+        return htsExplainCache[htsCode];
+      } catch (err) {
+        console.error(err);
+        return null;
+      }
+    }
+
+    function attachHTSHoverHandlers() {
+      const cells = document.querySelectorAll(".hts-code-cell");
+
+      cells.forEach(cell => {
+        const htsCode = cell.getAttribute("data-hts");
+
+        cell.addEventListener("mouseenter", async (e) => {
+          if (!htsCode) return;
+
+          htsTooltip.innerHTML = "코드 구조를 불러오는 중입니다...";
+          htsTooltip.classList.add("visible");
+          positionTooltip(e);
+
+          const segments = await fetchHTSExplain(htsCode);
+          htsTooltip.innerHTML = buildTooltipHtml(segments);
+        });
+
+        cell.addEventListener("mousemove", (e) => {
+          positionTooltip(e);
+        });
+
+        cell.addEventListener("mouseleave", () => {
+          htsTooltip.classList.remove("visible");
+        });
+      });
+    }
+
+    function positionTooltip(e) {
+      const offsetX = 0;
+      const offsetY = -12;
+      htsTooltip.style.left = `${e.clientX + offsetX}px`;
+      htsTooltip.style.top = `${e.clientY + offsetY}px`;
+    }
+
+    async function translateCandidatesToKorean(candidates) {
+      if (!candidates || candidates.length === 0) return;
+
+      for (const c of candidates) {
+        const textToTranslate = `Title: ${c.title || ""}\nReason: ${c.reason || ""}`;
+
+        try {
+          const res = await fetch("http://127.0.0.1:8000/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: textToTranslate }),
+          });
+
+          const data = await res.json();
+          if (data.translated_text) {
+            const lines = data.translated_text
+              .split("\n")
+              .map((l) => l.trim())
+              .filter((l) => l.length > 0);
+
+            const titleLine = lines.find((l) =>
+              l.toLowerCase().startsWith("title:")
+            );
+            const reasonLine = lines.find((l) =>
+              l.toLowerCase().startsWith("reason:")
+            );
+
+            if (titleLine) {
+              c.title = titleLine.replace(/^title:\s*/i, "");
+            }
+            if (reasonLine) {
+              c.reason = reasonLine.replace(/^reason:\s*/i, "");
+            }
+          }
+        } catch (err) {
+          console.error("Translation error:", err);
+        }
+      }
+    }
+
+    calcBtn.addEventListener("click", () => {
+      const radios = document.getElementsByName("hts_choice");
+      let selectedIndex = -1;
+      radios.forEach((r) => {
+        if (r.checked) selectedIndex = parseInt(r.value, 10);
+      });
+
+      if (selectedIndex < 0) {
+        alert("먼저 표에서 HTS 코드를 하나 선택해 주세요.");
+        return;
+      }
+
+      const qty = parseFloat(qtyInput.value);
+      const unitPrice = parseFloat(unitPriceInput.value);
+
+      if (!qty || qty <= 0 || !unitPrice || unitPrice < 0) {
+        alert("수량과 단가(USD)를 올바르게 입력해 주세요.");
+        return;
+      }
+
+      const item = lastCandidates[selectedIndex];
+      const rate = parseRate(item.estimated_tariff_rate);
+      const totalValueUsd = qty * unitPrice;
+      const dutyUsd = totalValueUsd * rate;
+
+      const ratePct =
+        item.estimated_tariff_rate ||
+        (rate ? (rate * 100).toFixed(2) + "%" : "N/A");
+
+      let resultText =
+        `예상 과세가격: <strong>${formatNumber(totalValueUsd)} USD</strong>` +
+        ` × 관세율 <strong>${ratePct}</strong> = ` +
+        `<strong>${formatNumber(dutyUsd)} USD</strong> (예상 관세)`;
+
+      let totalKrw = null;
+      let dutyKrw = null;
+
+      if (usdKrwRate) {
+        totalKrw = totalValueUsd * usdKrwRate;
+        dutyKrw = dutyUsd * usdKrwRate;
+        resultText +=
+          `<br />≈ 과세가격 <strong>${formatNumber(totalKrw)}원</strong>` +
+          ` / 관세 <strong>${formatNumber(dutyKrw)}원</strong>` +
+          ` (환율 ${usdKrwRate.toFixed(2)}원/USD 기준)`;
+      } else {
+        resultText +=
+          "<br />* 환율 정보를 불러오지 못해 원화 환산은 표시되지 않습니다.";
+      }
+
+      dutyResultEl.innerHTML = resultText;
+
+      // 상태 저장 (이후 이메일 Step에서 사용)
+      lastSelectedIndex = selectedIndex;
+      lastDutyCalc = {
+        qty,
+        unitPrice,
+        totalValueUsd,
+        dutyUsd,
+        ratePct,
+        totalKrw,
+        dutyKrw,
+        usdKrwRate,
+      };
+
+      // 관세 계산이 끝나면 이메일 Step 카드 노출 + 스크롤 다운
+      emailSection.classList.remove("hidden");
+      setTimeout(() => {
+        emailSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 180);
+      emailPreviewEl.classList.add("hidden");
+      emailPreviewEl.innerHTML = "";
+      emailSendBtn.classList.add("hidden");
+      emailSendStatusEl.classList.add("hidden");
+      emailSendStatusEl.textContent = "";
+      lastEmailDraft = null;
+    });
+
+    // 이메일 미리보기 버튼 클릭
+    emailPreviewBtn.addEventListener("click", async () => {
+      if (lastSelectedIndex < 0 || !lastCandidates[lastSelectedIndex]) {
+        alert("먼저 HTS 코드를 선택하고 관세 계산까지 완료해 주세요.");
+        return;
+      }
+      if (!lastDutyCalc) {
+        alert("관세 계산을 먼저 완료해 주세요.");
+        return;
+      }
+
+      const emailTo = (emailToInput.value || "").trim();
+      if (!emailTo) {
+        alert("이메일 주소를 입력해 주세요.");
+        return;
+      }
+      // 아주 간단한 이메일 형식 체크
+      if (!/.+@.+\..+/.test(emailTo)) {
+        alert("이메일 주소 형식을 다시 확인해 주세요.");
+        return;
+      }
+
+      const productName = document.getElementById("product_name").value;
+      const exporterHs = document.getElementById("exporter_hs").value || null;
+      const description = document.getElementById("description").value;
+      const countryOfOrigin = document.getElementById("country_of_origin").value;
+
+      const selected = lastCandidates[lastSelectedIndex];
+
+      const payload = {
+        product_name: productName,
+        exporter_hs: exporterHs,
+        description: description,
+        country_of_origin: countryOfOrigin,
+
+        email_to: emailTo,
+
+        hts_code: selected.hts_code || "",
+        hts_title: selected.title || "",
+        estimated_tariff_rate: selected.estimated_tariff_rate || "",
+        confidence: selected.confidence ?? null,
+
+        qty: lastDutyCalc.qty,
+        unit_price: lastDutyCalc.unitPrice,
+        total_value_usd: lastDutyCalc.totalValueUsd,
+        duty_usd: lastDutyCalc.dutyUsd,
+
+        total_value_krw: lastDutyCalc.totalKrw,
+        duty_krw: lastDutyCalc.dutyKrw,
+        usd_krw_rate: lastDutyCalc.usdKrwRate,
+      };
+
+      emailPreviewEl.classList.remove("hidden");
+      emailPreviewEl.innerHTML = "이메일 내용을 준비하고 있어요...";
+      emailSendBtn.classList.add("hidden");
+      emailSendStatusEl.classList.add("hidden");
+      emailSendStatusEl.textContent = "";
+      lastEmailDraft = null;
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/preview_email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          emailPreviewEl.innerHTML =
+            '<div class="error-box">Error: ' + data.error + "</div>";
+          return;
+        }
+
+        const to = data.to || emailTo;
+        const subject = data.subject || "";
+        const body = data.body || "";
+
+        emailPreviewEl.innerHTML = `
+          <div class="email-preview-header">이메일 미리보기</div>
+          <div class="email-preview-meta">
+            To: ${to}<br/>
+            Subject: ${subject}
+          </div>
+          <div>${body.replace(/\n/g, "<br />")}</div>
+        `;
+
+        // 마지막 이메일 초안 저장 (발송용)
+        lastEmailDraft = { to, subject, body };
+        emailSendBtn.classList.remove("hidden");
+        emailSendStatusEl.classList.add("hidden");
+        emailSendStatusEl.textContent = "";
+
+        setTimeout(() => {
+          emailPreviewEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 120);
+      } catch (err) {
+        console.error(err);
+        emailPreviewEl.innerHTML =
+          '<div class="error-box">Error: ' + String(err) + "</div>";
+      }
+    });
+
+    // 이메일 발송 버튼 클릭
+    emailSendBtn.addEventListener("click", async () => {
+      if (!lastEmailDraft) {
+        alert("먼저 이메일 미리보기를 생성해 주세요.");
+        return;
+      }
+
+      emailSendStatusEl.classList.remove("hidden");
+      emailSendStatusEl.textContent = "이메일을 보내는 중입니다...";
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/send_email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email_to: lastEmailDraft.to,
+            subject: lastEmailDraft.subject,
+            body: lastEmailDraft.body,
+          }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          emailSendStatusEl.textContent =
+            "이메일 발송 중 오류가 발생했습니다: " + data.error;
+        } else {
+          emailSendStatusEl.textContent =
+            "이메일을 발송했어요. 받은 편지함을 확인해 주세요.";
+        }
+      } catch (err) {
+        console.error(err);
+        emailSendStatusEl.textContent =
+          "이메일 발송 중 오류가 발생했습니다: " + String(err);
+      }
+    });
+  </script>
+</body>
+</html>
