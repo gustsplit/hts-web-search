@@ -1,6 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError, conint, parse_obj_as
 from typing import Optional, List
 from datetime import datetime
 from pathlib import Path
@@ -30,12 +30,27 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+
+def _parse_origins(raw: Optional[str]) -> List[str]:
+    if not raw:
+        # 안전한 기본값 (로컬 개발 전용)
+        return [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+        ]
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
+ALLOWED_ORIGINS = _parse_origins(os.getenv("ALLOWED_ORIGINS"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # PoC용: 전체 허용
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-Access-Token"],
 )
 
 # ================== .env 로드 추가 ==================
@@ -51,15 +66,14 @@ load_dotenv(ENV_PATH)
 
 # 환경변수 읽기
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+EMAIL_ACCESS_TOKEN = os.getenv("EMAIL_ACCESS_TOKEN")
+EMAIL_ALLOWED_DOMAINS = [d.strip() for d in os.getenv("EMAIL_ALLOWED_DOMAINS", "").split(",") if d.strip()]
+ENABLE_SEARCH_LOGGING = os.getenv("ENABLE_SEARCH_LOGGING", "false").lower() in {"1", "true", "yes"}
 
-if not GOOGLE_API_KEY:
-    logger.warning("GOOGLE_API_KEY 환경변수가 설정되어 있지 않습니다.")
-else:
-    # Warn if the key is still the placeholder
-    if GOOGLE_API_KEY.startswith("REPLACE_") or GOOGLE_API_KEY in ["REDACTED", "PLACEHOLDER"]:
-        logger.warning("GOOGLE_API_KEY is set to a placeholder value; please set a valid API key.")
-    else:
-        logger.info("GOOGLE_API_KEY loaded successfully.")
+if not GOOGLE_API_KEY or GOOGLE_API_KEY.startswith("REPLACE_") or GOOGLE_API_KEY in ["REDACTED", "PLACEHOLDER"]:
+    raise RuntimeError("유효한 GOOGLE_API_KEY가 설정되어 있지 않습니다. 환경변수를 확인해 주세요.")
+
+logger.info("GOOGLE_API_KEY loaded successfully.")
 
 # Google Generative AI SDK 설정
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -118,6 +132,19 @@ class EmailSendRequest(BaseModel):
     body: str
 
 
+class HTSCandidate(BaseModel):
+    hts_code: str
+    title: str
+    estimated_tariff_rate: Optional[str]
+    reason: Optional[str]
+    confidence: Optional[conint(ge=0, le=100)] = None
+
+
+class HTSSegment(BaseModel):
+    code_part: str
+    meaning_ko: str
+
+
 # ================== 공용 유틸 함수 ==================
 
 def extract_json(text: str) -> str:
@@ -159,6 +186,9 @@ def log_search(req: HTSRequest, candidates: List[dict]):
     사용자가 검색한 내용 + LLM이 제안한 HTS 코드 후보를
     JSONL 형식으로 파일에 1줄씩 append.
     """
+    if not ENABLE_SEARCH_LOGGING:
+        return
+
     log_entry = {
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "product_name": req.product_name,
@@ -200,6 +230,24 @@ def send_email_via_gmail(to_email: str, subject: str, body: str):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
         smtp.login(gmail_user, gmail_pass)
         smtp.send_message(msg)
+
+
+def _enforce_email_policy(to_email: str, provided_token: Optional[str]):
+    """최소한의 남용 방지를 위해 토큰/도메인을 확인한다."""
+
+    if EMAIL_ACCESS_TOKEN:
+        if not provided_token:
+            raise HTTPException(status_code=401, detail="X-Access-Token header is required for email sending")
+        if provided_token != EMAIL_ACCESS_TOKEN:
+            raise HTTPException(status_code=401, detail="Invalid access token")
+
+    if "@" not in to_email:
+        raise HTTPException(status_code=400, detail="Invalid recipient email")
+
+    if EMAIL_ALLOWED_DOMAINS:
+        lowered = to_email.lower()
+        if not any(lowered.endswith(f"@{d.lower()}") for d in EMAIL_ALLOWED_DOMAINS):
+            raise HTTPException(status_code=400, detail="Recipient domain is not allowed")
 
 
 # ================== 기본 헬스체크 ==================
@@ -246,14 +294,9 @@ DO NOT add any explanation before or after the JSON.
         raw_text = response.text or ""
         cleaned_json_str = extract_json(raw_text)
 
-        candidates = json.loads(cleaned_json_str)
-
-        if not isinstance(candidates, list):
-            logger.error("LLM response is not a JSON list")
-            return {
-                "error": "LLM response is not a JSON list",
-                "raw": cleaned_json_str,
-            }
+        candidates_raw = json.loads(cleaned_json_str)
+        validated = parse_obj_as(List[HTSCandidate], candidates_raw)
+        candidates = [c.dict() for c in validated]
 
         # 검색 로그 저장
         log_search(req, candidates)
@@ -265,6 +308,12 @@ DO NOT add any explanation before or after the JSON.
         return {
             "error": "Failed to parse JSON from LLM",
             "raw": raw_text if "raw_text" in locals() else None,
+        }
+    except ValidationError as e:
+        logger.exception("LLM response validation failed in /api/search_hts")
+        return {
+            "error": "LLM response validation failed",
+            "details": e.errors(),
         }
     except Exception as e:
         logger.exception("Error in /api/search_hts")
@@ -429,22 +478,22 @@ HTS 코드: {req.hts_code}
 
         raw_text = response.text or ""
         cleaned_json_str = extract_json(raw_text)
-        segments = json.loads(cleaned_json_str)
+        segments_raw = json.loads(cleaned_json_str)
+        segments = parse_obj_as(List[HTSSegment], segments_raw)
 
-        if not isinstance(segments, list):
-            logger.error("LLM response is not a JSON list (explain_hts)")
-            return {
-                "error": "LLM response is not a JSON list",
-                "raw": cleaned_json_str,
-            }
-
-        return {"segments": segments}
+        return {"segments": [s.dict() for s in segments]}
 
     except json.JSONDecodeError:
         logger.exception("Failed to parse JSON from LLM in /api/explain_hts")
         return {
             "error": "Failed to parse JSON from LLM",
             "raw": raw_text if "raw_text" in locals() else None,
+        }
+    except ValidationError as e:
+        logger.exception("LLM response validation failed in /api/explain_hts")
+        return {
+            "error": "LLM response validation failed",
+            "details": e.errors(),
         }
     except Exception as e:
         logger.exception("Error in /api/explain_hts")
@@ -542,14 +591,18 @@ def preview_email(req: EmailPreviewRequest):
 # ================== 이메일 발송 API ==================
 
 @app.post("/api/send_email")
-def send_email(req: EmailSendRequest):
+def send_email(req: EmailSendRequest, x_access_token: Optional[str] = Header(None)):
     """
     프론트에서 전달한 subject/body를 그대로 사용해서
     tarfaservice@gmail.com 계정으로 실제 발송.
     """
+    _enforce_email_policy(req.email_to, x_access_token)
+
     try:
         send_email_via_gmail(req.email_to, req.subject, req.body)
         return {"status": "ok"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Error in /api/send_email")
         return {"error": str(e)}
