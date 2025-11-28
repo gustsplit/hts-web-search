@@ -13,6 +13,8 @@ import logging
 import requests
 import google.generativeai as genai
 
+from dotenv import load_dotenv
+
 # 이메일 발송용 추가 import
 import smtplib
 from email.message import EmailMessage
@@ -36,10 +38,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 환경변수에서 GOOGLE_API_KEY 읽기
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+# ================== .env 로드 추가 ==================
+from pathlib import Path
+from dotenv import load_dotenv
+
+# 현재 파일(main.py) 기준 backend/.env 파일 경로
+BASE_DIR = Path(__file__).resolve().parent
+ENV_PATH = BASE_DIR / ".env"
+
+# .env 파일 불러오기
+load_dotenv(ENV_PATH)
+
+# 환경변수 읽기
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
 if not GOOGLE_API_KEY:
     logger.warning("GOOGLE_API_KEY 환경변수가 설정되어 있지 않습니다.")
+else:
+    # Warn if the key is still the placeholder
+    if GOOGLE_API_KEY.startswith("REPLACE_") or GOOGLE_API_KEY in ["REDACTED", "PLACEHOLDER"]:
+        logger.warning("GOOGLE_API_KEY is set to a placeholder value; please set a valid API key.")
+    else:
+        logger.info("GOOGLE_API_KEY loaded successfully.")
+
+# Google Generative AI SDK 설정
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # ================== 데이터 모델 ==================
@@ -286,8 +308,7 @@ _fx_cached_rate: Optional[float] = None
 _fx_cached_timestamp: float = 0.0  # epoch time (초 단위)
 
 
-@app.get("/api/usd-krw")
-def get_usd_krw():
+def _build_fx_response():
     global _fx_cached_rate, _fx_cached_timestamp
 
     try:
@@ -295,10 +316,12 @@ def get_usd_krw():
         twelve_hours = 12 * 60 * 60
 
         if _fx_cached_rate is not None and (now - _fx_cached_timestamp) < twelve_hours:
+            # Return cached rate; include timestamp (ISO) for readability
             return {
                 "rate": _fx_cached_rate,
                 "source": "cache",
                 "last_update": _fx_cached_timestamp,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
             }
 
         # 무료 환율 API로 교체: https://open.er-api.com
@@ -321,6 +344,7 @@ def get_usd_krw():
             "rate": _fx_cached_rate,
             "source": "live-update",
             "last_update": _fx_cached_timestamp,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
 
     except Exception as e:
@@ -330,12 +354,28 @@ def get_usd_krw():
                 "rate": _fx_cached_rate,
                 "source": "fallback-cache",
                 "error": str(e),
+                "last_update": _fx_cached_timestamp,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
             }
         return {
             "rate": 1400.0,
             "source": "fallback-fixed",
             "error": str(e),
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
+
+
+@app.get("/api/exchange-rate/usd-krw")
+def get_usd_krw_new():
+    return _build_fx_response()
+
+
+@app.get("/api/usd-krw")
+def get_usd_krw_deprecated():
+    resp = _build_fx_response()
+    resp["deprecated"] = True
+    resp["deprecated_message"] = "This endpoint is deprecated; use /api/exchange-rate/usd-krw instead."
+    return resp
 
 
 # ================== HTS 코드 구조 설명 API ==================
@@ -518,4 +558,10 @@ def send_email(req: EmailSendRequest):
 # ===== (선택) 로컬에서 직접 테스트용 엔트리 포인트 =====
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+    uvicorn.run(
+        "main:app",        # 이 파일 안의 app 객체를 사용
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+    )
