@@ -523,6 +523,15 @@
           <input type="email" id="email_to" placeholder="예: name@example.com" />
         </div>
         <div>
+          <div class="field-label">API Access Token</div>
+          <input
+            type="password"
+            id="email_access_token"
+            placeholder="X-Access-Token 헤더 값"
+            autocomplete="off"
+          />
+        </div>
+        <div>
           <button type="button" id="email-preview-btn">
             <span class="btn-icon">📨</span>
             <span>이메일 미리보기 만들기</span>
@@ -572,6 +581,7 @@
 
     const emailSection = document.getElementById("email-section");
     const emailToInput = document.getElementById("email_to");
+    const emailAccessTokenInput = document.getElementById("email_access_token");
     const emailPreviewBtn = document.getElementById("email-preview-btn");
     const emailPreviewEl = document.getElementById("email-preview");
     const emailSendBtn = document.getElementById("email-send-btn");
@@ -589,6 +599,12 @@
     const htsExplainCache = {};
     // 마지막 이메일 초안 저장 (발송 시 사용)
     let lastEmailDraft = null;
+
+    // 이메일 토큰 로드 (있으면 자동 입력)
+    const savedAccessToken = localStorage.getItem("EMAIL_ACCESS_TOKEN");
+    if (savedAccessToken) {
+      emailAccessTokenInput.value = savedAccessToken;
+    }
 
     function formatNumber(n) {
       if (isNaN(n)) return "";
@@ -608,18 +624,20 @@
     // 백엔드에서 USD-KRW 환율 가져오기
     async function fetchFxRate() {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/usd-krw");
+        const res = await fetch("http://127.0.0.1:8000/api/exchange-rate/usd-krw");
         const data = await res.json();
         if (data.rate) {
           usdKrwRate = data.rate;
+          const ts = data.timestamp ? ` (업데이트: ${new Date(data.timestamp).toLocaleString()})` : "";
           fxInfoEl.textContent =
-            `현재 적용 환율: 1 USD ≈ ${usdKrwRate.toFixed(2)}원`;
+            `현재 적용 환율: 1 USD ≈ ${usdKrwRate.toFixed(2)}원${ts}`;
         } else {
           usdKrwRate = null;
+          const ts = data.timestamp ? ` (업데이트: ${new Date(data.timestamp).toLocaleString()})` : "";
           fxInfoEl.textContent =
-            "환율 정보를 불러오지 못했습니다. (임시로 원화 환산은 표시되지 않을 수 있습니다)";
+            `환율 정보를 불러오지 못했습니다. (임시로 원화 환산은 표시되지 않을 수 있습니다)${ts}`;
         }
-      } catch (err) {
+        } catch (err) {
         console.error(err);
         usdKrwRate = null;
         fxInfoEl.textContent =
@@ -1083,13 +1101,21 @@
         return;
       }
 
+      const accessToken = emailAccessTokenInput.value.trim();
+      if (accessToken) {
+        localStorage.setItem("EMAIL_ACCESS_TOKEN", accessToken);
+      }
+
       emailSendStatusEl.classList.remove("hidden");
       emailSendStatusEl.textContent = "이메일을 보내는 중입니다...";
 
       try {
         const res = await fetch("http://127.0.0.1:8000/api/send_email", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { "X-Access-Token": accessToken } : {}),
+          },
           body: JSON.stringify({
             email_to: lastEmailDraft.to,
             subject: lastEmailDraft.subject,
