@@ -50,10 +50,10 @@ ALLOWED_ORIGINS = _parse_origins(os.getenv("ALLOWED_ORIGINS"))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-Access-Token"],
+    allow_origins=["*"],  # Allow all origins, including 'null' (file://)
+    allow_credentials=False, # Must be False when allow_origins is ["*"]
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ================== .env 로드 추가 ==================
