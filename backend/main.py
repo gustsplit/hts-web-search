@@ -12,6 +12,9 @@ import logging
 
 import requests
 import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # 이메일 발송용 추가 import
 import smtplib

@@ -4,3 +4,4 @@ python-multipart
 httpx
 jinja2
 google-generativeai
+python-dotenv

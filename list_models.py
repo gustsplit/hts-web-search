@@ -1,5 +1,8 @@
 import google.generativeai as genai
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # 환경변수에서 API 키 불러오기
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
