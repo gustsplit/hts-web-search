@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 # 이메일 발송용 추가 import
 import smtplib
@@ -72,6 +73,17 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 EMAIL_ACCESS_TOKEN = os.getenv("EMAIL_ACCESS_TOKEN")
 EMAIL_ALLOWED_DOMAINS = [d.strip() for d in os.getenv("EMAIL_ALLOWED_DOMAINS", "").split(",") if d.strip()]
 ENABLE_SEARCH_LOGGING = os.getenv("ENABLE_SEARCH_LOGGING", "false").lower() in {"1", "true", "yes"}
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Optional[Client] = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        logger.info("Supabase client initialized.")
+    except Exception as e:
+        logger.error(f"Failed to initialize Supabase client: {e}")
 
 if not GOOGLE_API_KEY or GOOGLE_API_KEY.startswith("REPLACE_") or GOOGLE_API_KEY in ["REDACTED", "PLACEHOLDER"]:
     raise RuntimeError("유효한 GOOGLE_API_KEY가 설정되어 있지 않습니다. 환경변수를 확인해 주세요.")
@@ -177,36 +189,33 @@ def extract_json(text: str) -> str:
     return cleaned
 
 
-# ================== 검색 로그 저장 설정 ==================
-
-LOG_DIR = Path(__file__).resolve().parent / "logs"
-LOG_DIR.mkdir(exist_ok=True)
-LOG_FILE = LOG_DIR / "search_logs.jsonl"
-
-
 def log_search(req: HTSRequest, candidates: List[dict]):
     """
     사용자가 검색한 내용 + LLM이 제안한 HTS 코드 후보를
-    JSONL 형식으로 파일에 1줄씩 append.
+    Supabase 'search_logs' 테이블에 insert.
     """
     if not ENABLE_SEARCH_LOGGING:
         return
 
+    if not supabase:
+        logger.warning("Supabase client not initialized, skipping log.")
+        return
+
     log_entry = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
         "product_name": req.product_name,
         "exporter_hs": req.exporter_hs,
         "description": req.description,
         "country_of_origin": req.country_of_origin,
-        "candidates": candidates,
+        "candidates": candidates,  # Supabase JSONB column
+        # timestamp is usually handled by default value in DB or we can send it
+        "created_at": datetime.utcnow().isoformat(),
     }
 
     try:
-        with LOG_FILE.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        supabase.table("search_logs").insert(log_entry).execute()
     except Exception as e:
         # 로그 실패해도 서비스는 계속
-        logger.warning(f"Failed to write log: {e}")
+        logger.warning(f"Failed to write log to Supabase: {e}")
 
 
 # ================== 이메일 발송 유틸 (Gmail) ==================
