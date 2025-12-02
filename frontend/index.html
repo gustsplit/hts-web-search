@@ -44,11 +44,23 @@
       margin-bottom: 18px;
     }
 
+    .finder-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .finder-title {
+      flex: 1;
+      min-width: 0;
+    }
+
     .app-title-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
     .logo-dot {
@@ -68,6 +80,93 @@
     .app-subtitle {
       font-size: 13px;
       color: var(--text-sub);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .language-switcher {
+      position: relative;
+      align-self: flex-start;
+    }
+
+    .lang-button {
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: #ffffff;
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+      transition: background-color 0.15s ease, box-shadow 0.15s ease,
+        transform 0.06s ease;
+    }
+
+    .lang-button:hover {
+      background: #f9fafb;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .lang-button:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    }
+
+    .lang-caret {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .lang-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 200px;
+      max-width: 240px;
+      max-height: 280px;
+      overflow-y: auto;
+      display: none;
+      z-index: 30;
+    }
+
+    .lang-menu.open {
+      display: block;
+    }
+
+    .lang-option {
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      padding: 9px 11px;
+      font-size: 13px;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: background-color 0.15s ease, box-shadow 0.15s ease,
+        transform 0.06s ease, color 0.12s ease;
+    }
+
+    .lang-option:hover {
+      background: #f5f7fb;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.10);
+      transform: translateY(-1px);
+    }
+
+    .lang-option.active {
+      background: #eef3ff;
+      color: #1d4ed8;
+      font-weight: 700;
     }
 
     /* Form */
@@ -410,6 +509,20 @@
       td {
         font-size: 12px;
       }
+
+      .finder-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .language-switcher {
+        align-self: flex-end;
+      }
+
+      .lang-menu {
+        max-width: calc(100vw - 32px);
+      }
     }
   </style>
 </head>
@@ -417,39 +530,90 @@
   <div class="app-shell">
     <!-- 메인 검색 카드 -->
     <div class="card">
+      
       <header class="app-header">
-        <div class="app-title-row">
-          <div class="logo-dot"></div>
-          <h1>US HTS Code Finder</h1>
-        </div>
-        <div class="app-subtitle">
-          입력하신 상품 정보를 기반으로 미국 HTS 후보 코드를 추천해 드려요.
+        <div class="finder-header">
+          <div class="finder-title">
+            <div class="app-title-row">
+              <div class="logo-dot"></div>
+              <h1 data-i18n="title.main">US HTS Code Finder</h1>
+            </div>
+            <p class="app-subtitle" data-i18n="subtitle.main">
+              입력하신 상품 정보를 기반으로 미국 HTS 후보 코드를 추천해 드려요.
+            </p>
+          </div>
+
+          <div class="language-switcher">
+            <button id="lang-button" class="lang-button" type="button">
+              🌐 <span id="lang-button-label">한국어</span>
+              <span class="lang-caret">▾</span>
+            </button>
+            <div id="lang-menu" class="lang-menu">
+              <button class="lang-option" data-lang="auto" data-i18n="lang.auto">
+                Automatic
+              </button>
+              <button class="lang-option" data-lang="en-US" data-i18n="lang.en">
+                English
+              </button>
+              <button class="lang-option" data-lang="ko-KR" data-i18n="lang.ko">
+                한국어
+              </button>
+              <button class="lang-option" data-lang="zh-CN" data-i18n="lang.zh">
+                中文
+              </button>
+              <button class="lang-option" data-lang="es-MX" data-i18n="lang.es">
+                Español
+              </button>
+              <button class="lang-option" data-lang="ja-JP" data-i18n="lang.ja">
+                日本語
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
+
       <form id="hts-form">
         <div>
-          <div class="field-label">제품명 (Product Name)</div>
-          <input type="text" id="product_name" placeholder="예: 옥수수" required />
+          <div class="field-label" data-i18n="form.productNameLabel">제품명 (Product Name)</div>
+          <input
+            type="text"
+            id="product_name"
+            placeholder="예: 옥수수"
+            data-i18n-placeholder="form.productNamePlaceholder"
+            required
+          />
         </div>
 
         <div class="form-row-inline">
           <div>
-            <div class="field-label">수출자 HS 코드 (한국, 선택)</div>
-            <input type="text" id="exporter_hs" placeholder="예: 1005.90" />
+            <div class="field-label" data-i18n="form.exporterHsLabel">수출자 HS 코드 (한국, 선택)</div>
+            <input
+              type="text"
+              id="exporter_hs"
+              placeholder="예: 1005.90"
+              data-i18n-placeholder="form.exporterHsPlaceholder"
+            />
           </div>
           <div>
-            <div class="field-label">원산지 (Country of Origin)</div>
-            <input type="text" id="country_of_origin" placeholder="예: Korea" required />
+            <div class="field-label" data-i18n="form.countryLabel">원산지 (Country of Origin)</div>
+            <input
+              type="text"
+              id="country_of_origin"
+              placeholder="예: Korea"
+              data-i18n-placeholder="form.countryPlaceholder"
+              required
+            />
           </div>
         </div>
 
         <div>
-          <div class="field-label">제품 설명 (Product Description)</div>
+          <div class="field-label" data-i18n="form.descriptionLabel">제품 설명 (Product Description)</div>
           <textarea
             id="description"
             rows="4"
             placeholder="예: 조리하지 않은 날것의 식용 옥수수"
+            data-i18n-placeholder="form.descriptionPlaceholder"
             required
           ></textarea>
         </div>
@@ -457,111 +621,242 @@
         <div class="button-row">
           <button type="submit">
             <span class="btn-icon">🔍</span>
-            <span>HTS 코드 검색하기</span>
+            <span data-i18n="form.submitButton">HTS 코드 검색하기</span>
           </button>
         </div>
       </form>
 
       <div class="results-section-title">
-        HTS 코드 추천 결과
-        <span class="badge-pill">LLM 기반 후보 리스트</span>
+        <span data-i18n="results.sectionTitle">HTS 코드 추천 결과</span>
+        <span class="badge-pill" data-i18n="results.badge">LLM 기반 후보 리스트</span>
       </div>
       <div id="results"></div>
     </div>
 
-    <!-- 관세 시뮬레이션 카드 -->
+    
+
+    <!-- Duty simulation card -->
+
     <div class="card hidden" id="duty-section">
-      <div class="duty-card-title">실제 얼마나 관세가 나올지 궁금하신가요?</div>
-      <div class="duty-subtitle">
+
+      <div class="duty-card-title" data-i18n="duty.title">실제 얼마나 관세가 나올지 궁금하신가요?</div>
+
+      <div class="duty-subtitle" data-i18n="duty.subtitle">
+
         위에서 선택하신 HTS 코드 기준으로, 수량과 단가(USD)를 입력해 예상 관세를 간단히 계산해 보세요.
+
       </div>
 
-      <div class="muted" id="fx-info">
+
+
+      <div class="muted" id="fx-info" data-i18n="duty.fxLoading">
+
         환율 정보를 불러오는 중입니다...
+
       </div>
-      <div class="muted" id="selected-hts-info">
+
+      <div class="muted" id="selected-hts-info" data-i18n="duty.selectPrompt">
+
         아직 HTS 코드를 선택하지 않으셨어요. 표에서 하나를 선택해 주세요.
+
       </div>
+
+
 
       <div class="duty-grid">
+
         <div>
-          <div class="field-label">수량</div>
-          <input type="number" id="qty" min="1" placeholder="예: 100" />
+
+          <div class="field-label" data-i18n="duty.qty">수량</div>
+
+          <input
+
+            type="number"
+
+            id="qty"
+
+            min="1"
+
+            placeholder="예: 100"
+
+            data-i18n-placeholder="duty.qtyPlaceholder"
+
+          />
+
         </div>
+
         <div>
-          <div class="field-label">단가 (USD $)</div>
-          <input type="number" id="unit_price" min="0" step="0.01" placeholder="예: 50" />
+
+          <div class="field-label" data-i18n="duty.unitPrice">단가 (USD $)</div>
+
+          <input
+
+            type="number"
+
+            id="unit_price"
+
+            min="0"
+
+            step="0.01"
+
+            placeholder="예: 50"
+
+            data-i18n-placeholder="duty.unitPricePlaceholder"
+
+          />
+
         </div>
+
         <div style="display:flex; align-items:flex-end;">
+
           <button type="button" id="calc-duty-btn">
+
             <span class="btn-icon">📊</span>
-            <span>관세 계산하기</span>
+
+            <span data-i18n="duty.calcButton">관세 계산하기</span>
+
           </button>
+
         </div>
+
       </div>
+
+
 
       <div class="duty-result" id="duty-result"></div>
-      <div class="muted">
+
+      <div class="muted" data-i18n="duty.note">
+
         * 실제 관세는 세관 신고 내용, FTA, 추가 세율 등에 따라 달라질 수 있으며, 이 계산은 참고용 시뮬레이션입니다.
+
       </div>
+
     </div>
+
+
 
     <!-- 이메일 Step 카드 (새로운 Step) -->
+
     <div class="card hidden" id="email-section">
+
       <div class="email-card-title">
-        US HTS code 및 계산된 내용을 이메일로 받아보시겠어요?
-        <span class="badge-step">Step 3 · Email</span>
+        <span data-i18n="email.title">US HTS code 및 계산된 내용을 이메일로 받아보시겠어요?</span>
+        <span class="badge-step" data-i18n="email.stepBadge">Step 3 · Email</span>
       </div>
-      <div class="email-subtitle">
+      <div class="email-subtitle" data-i18n="email.subtitle">
+
         지금까지 입력하신 상품 정보, 선택하신 HTS 코드, 그리고 방금 계산한 관세 금액을 한 번에 정리해서
+
         메일 초안으로 만들어 드려요.
+
       </div>
+
+
 
       <div class="email-inline-row">
+
         <div>
-          <div class="field-label">이메일 주소</div>
-          <input type="email" id="email_to" placeholder="예: name@example.com" />
-        </div>
-        <div>
-          <div class="field-label">API Access Token</div>
+
+          <div class="field-label" data-i18n="email.emailLabel">이메일 주소</div>
+
           <input
-            type="password"
-            id="email_access_token"
-            placeholder="X-Access-Token 헤더 값"
-            autocomplete="off"
+
+            type="email"
+
+            id="email_to"
+
+            placeholder="예: name@example.com"
+
+            data-i18n-placeholder="email.emailPlaceholder"
+
           />
+
         </div>
+
         <div>
-          <button type="button" id="email-preview-btn">
-            <span class="btn-icon">📨</span>
-            <span>이메일 미리보기 만들기</span>
-          </button>
+
+          <div class="field-label" data-i18n="email.tokenLabel">API Access Token</div>
+
+          <input
+
+            type="password"
+
+            id="email_access_token"
+
+            placeholder="X-Access-Token 헤더 값"
+
+            data-i18n-placeholder="email.tokenPlaceholder"
+
+            autocomplete="off"
+
+          />
+
         </div>
+
+        <div>
+
+          <button type="button" id="email-preview-btn">
+
+            <span class="btn-icon">✉️</span>
+
+            <span data-i18n="email.previewButton">이메일 미리보기 만들기</span>
+
+          </button>
+
+        </div>
+
       </div>
 
-      <div class="muted">
-        * 실제 발송 전에, 아래에서 메일 내용을 먼저 확인하실 수 있어요.
+
+
+      <div class="muted" data-i18n="email.note">
+
+        * 실제 발송 전에, 아래서 메일 내용을 먼저 확인하실 수 있어요.
+
       </div>
+
+
 
       <div id="email-preview" class="email-preview-box hidden">
+
         <!-- JS에서 내용 채움 -->
+
       </div>
+
+
 
       <div style="margin-top:10px;">
+
         <button type="button" id="email-send-btn" class="hidden">
+
           <span class="btn-icon">✅</span>
-          <span>이 내용으로 이메일 보내기</span>
+
+          <span data-i18n="email.sendButton">이 내용으로 이메일 보내기</span>
+
         </button>
+
         <div id="email-send-status" class="muted hidden"></div>
+
       </div>
+
     </div>
-  </div>
+
+
+
+    
 
   <!-- 면책 고지문 -->
-  <div style="font-size:11px; color:#888; margin-top:30px; text-align:center;">
-    * 본 서비스의 HTS 코드 및 관세율은 참고용으로 제공되며,
-    실제 세율 및 분류는 미국 CBP 및 관세당국의 최종 결정에 따릅니다.
-    본 정보에 기반한 모든 판단 및 책임은 사용자에게 있습니다.
+
+  <div
+
+    style="font-size:11px; color:#888; margin-top:30px; text-align:center;"
+
+    data-i18n="footer.disclaimer"
+
+  >
+
+    * 본 서비스의 HTS 코드 및 관세율은 참고용으로 제공되며, 실제 세율 및 분류는 미국 CBP 및 관세당국의 최종 결정에 따릅니다. 본 정보에 기반한 모든 판단 및 책임은 사용자에게 있습니다.
+
   </div>
 
   <!-- HTS 코드 구조 툴팁 -->
@@ -586,6 +881,10 @@
     const emailPreviewEl = document.getElementById("email-preview");
     const emailSendBtn = document.getElementById("email-send-btn");
     const emailSendStatusEl = document.getElementById("email-send-status");
+    const langButton = document.getElementById("lang-button");
+    const langButtonLabel = document.getElementById("lang-button-label");
+    const langMenu = document.getElementById("lang-menu");
+    const langOptions = document.querySelectorAll(".lang-option");
 
     // 마지막 후보들 저장 (라디오 선택 시 참조)
     let lastCandidates = [];
@@ -595,6 +894,8 @@
     let lastDutyCalc = null;
     // USD-KRW 환율
     let usdKrwRate = null;
+    let fxStatus = "loading";
+    let lastFxTimestamp = null;
     // HTS 설명 캐시
     const htsExplainCache = {};
     // 마지막 이메일 초안 저장 (발송 시 사용)
@@ -606,6 +907,531 @@
       emailAccessTokenInput.value = savedAccessToken;
     }
 
+    const LANG_LABELS = {
+      auto: "Automatic",
+      "en-US": "English",
+      "ko-KR": "한국어",
+      "zh-CN": "中文",
+      "es-MX": "Español",
+      "ja-JP": "日本語",
+    };
+
+    const I18N = {
+      "en-US": {
+        "lang.auto": "Automatic",
+        "lang.en": "English",
+        "lang.ko": "한국어",
+        "lang.en": "영어",
+        "lang.zh": "中文",
+        "lang.es": "Español",
+        "lang.ja": "日本語",
+        "title.main": "US HTS Code Finder",
+        "subtitle.main": "We recommend likely US HTS codes based on your product details.",
+        "form.productNameLabel": "Product Name",
+        "form.productNamePlaceholder": "e.g., corn",
+        "form.exporterHsLabel": "Exporter HS Code (Korea, optional)",
+        "form.exporterHsPlaceholder": "e.g., 1005.90",
+        "form.countryLabel": "Country of Origin",
+        "form.countryPlaceholder": "e.g., Korea",
+        "form.descriptionLabel": "Product Description",
+        "form.descriptionPlaceholder": "e.g., raw edible corn, not cooked",
+        "form.submitButton": "Search HTS Code",
+        "results.sectionTitle": "HTS Code Suggestions",
+        "results.badge": "LLM Candidate List",
+        "results.loading": "Analyzing HTS candidates with LLM...",
+        "results.noCandidates": "No HTS codes to recommend.",
+        "results.table.select": "Select",
+        "results.table.confidence": "Confidence",
+        "results.table.code": "US HTS Code",
+        "results.table.title": "Item Name",
+        "results.table.tariff": "Duty Rate",
+        "results.table.reason": "Classification Notes",
+        "duty.title": "Wondering how much duty you’ll pay?",
+        "duty.subtitle":
+          "Using the HTS code you selected above, enter quantity and unit price (USD) to estimate duty.",
+        "duty.fxLoading": "Loading FX info...",
+        "duty.fxError": "Could not fetch FX info. (KRW view may be unavailable.)",
+        "duty.fxInfo": "Current rate: 1 USD ≈ {rate} KRW{timestamp}",
+        "duty.selectPrompt": "Select an HTS code in the table above first.",
+        "duty.qty": "Quantity",
+        "duty.qtyPlaceholder": "e.g., 100",
+        "duty.unitPrice": "Unit Price (USD $)",
+        "duty.unitPricePlaceholder": "e.g., 50",
+        "duty.calcButton": "Calculate Duty",
+        "duty.note":
+          "* Actual duty may vary by declaration, FTA, or additional rates. This is a reference simulation.",
+        "duty.alertSelect": "Please select an HTS code in the table first.",
+        "duty.alertInputs": "Enter valid quantity and unit price (USD).",
+        "duty.selectedInfo": "Selected HTS: <strong>{code}</strong><span class=\"badge-hts\">Duty: {rate}</span>",
+        "duty.resultEquation":
+          "Estimated customs value <strong>{totalValueUsd} USD</strong> × duty rate <strong>{ratePct}</strong> = <strong>{dutyUsd} USD</strong>",
+        "duty.resultKrw":
+          "<br />KRW view: value <strong>{totalKrw} KRW</strong> / duty <strong>{dutyKrw} KRW</strong> (FX {fxRate} KRW/USD)",
+        "duty.resultNoFx": "<br />* FX unavailable; KRW view is hidden.",
+        "email.title": "Get the HTS code and duty calculation by email?",
+        "email.stepBadge": "Step 3 · Email",
+        "email.subtitle":
+          "We’ll compile your product details, chosen HTS code, and the duty estimate into an email draft.",
+        "email.emailLabel": "Email address",
+        "email.emailPlaceholder": "e.g., name@example.com",
+        "email.tokenLabel": "API Access Token",
+        "email.tokenPlaceholder": "X-Access-Token header value",
+        "email.previewButton": "Create email preview",
+        "email.note": "* Before sending, review the email content below.",
+        "email.previewTitle": "Email Preview",
+        "email.previewLoading": "Preparing the email content...",
+        "email.sendButton": "Send email with this content",
+        "email.statusSending": "Sending email...",
+        "email.statusSuccess": "Email sent. Please check your inbox.",
+        "email.statusError": "Email send error: {error}",
+        "alerts.needSelection": "Select an HTS code and finish the duty calculation first.",
+        "alerts.needDuty": "Please complete the duty calculation first.",
+        "alerts.emailRequired": "Enter an email address.",
+        "alerts.emailFormat": "Please check the email address format.",
+        "alerts.needPreview": "Generate the email preview first.",
+        "footer.disclaimer":
+          "* HTS codes and duty rates here are for reference only. Final rates/classifications are determined by US CBP and customs authorities. All decisions and responsibility based on this info rest with the user.",
+        "tooltip.title": "Code Structure / Classification",
+        "tooltip.colCode": "Code",
+        "tooltip.colMeaning": "Meaning",
+        "tooltip.loading": "Loading code structure...",
+        "tooltip.noData": "Could not load code structure info.",
+      },
+      "ko-KR": {
+        "lang.auto": "Automatic",
+        "lang.en": "영어",
+        "lang.ko": "한국어",
+        "lang.en": "영어",
+        "lang.zh": "中文",
+        "lang.es": "Español",
+        "lang.ja": "日本語",
+        "title.main": "US HTS Code Finder",
+        "subtitle.main": "입력하신 상품 정보를 기반으로 미국 HTS 후보 코드를 추천해 드려요.",
+        "form.productNameLabel": "제품명 (Product Name)",
+        "form.productNamePlaceholder": "예: 옥수수",
+        "form.exporterHsLabel": "수출자 HS 코드 (한국, 선택)",
+        "form.exporterHsPlaceholder": "예: 1005.90",
+        "form.countryLabel": "원산지 (Country of Origin)",
+        "form.countryPlaceholder": "예: Korea",
+        "form.descriptionLabel": "제품 설명 (Product Description)",
+        "form.descriptionPlaceholder": "예: 조리하지 않은 날것의 식용 옥수수",
+        "form.submitButton": "HTS 코드 검색하기",
+        "results.sectionTitle": "HTS 코드 추천 결과",
+        "results.badge": "LLM 기반 후보 리스트",
+        "results.loading": "LLM이 HTS 후보를 분석하는 중입니다...",
+        "results.noCandidates": "추천할 HTS 코드가 없습니다.",
+        "results.table.select": "선택",
+        "results.table.confidence": "신뢰도",
+        "results.table.code": "US HTS Code",
+        "results.table.title": "품목명",
+        "results.table.tariff": "관세율",
+        "results.table.reason": "분류 설명",
+        "duty.title": "실제 얼마나 관세가 나올지 궁금하신가요?",
+        "duty.subtitle":
+          "위에서 선택하신 HTS 코드 기준으로, 수량과 단가(USD)를 입력해 예상 관세를 간단히 계산해 보세요.",
+        "duty.fxLoading": "환율 정보를 불러오는 중입니다...",
+        "duty.fxError": "환율 정보를 불러오지 못했습니다. (원화 계산이 일시적으로 표시되지 않습니다.)",
+        "duty.fxInfo": "현재 적용 환율: 1 USD ≈ {rate} KRW{timestamp}",
+        "duty.selectPrompt": "아직 HTS 코드를 선택하지 않으셨어요. 표에서 하나를 선택해 주세요.",
+        "duty.qty": "수량",
+        "duty.qtyPlaceholder": "예: 100",
+        "duty.unitPrice": "단가 (USD $)",
+        "duty.unitPricePlaceholder": "예: 50",
+        "duty.calcButton": "관세 계산하기",
+        "duty.note":
+          "* 실제 관세는 세관 신고 내용, FTA, 추가 세율 등에 따라 달라질 수 있으며, 이 계산은 참고용 시뮬레이션입니다.",
+        "duty.alertSelect": "먼저 표에서 HTS 코드를 하나 선택해 주세요.",
+        "duty.alertInputs": "수량과 단가(USD)를 올바르게 입력해 주세요.",
+        "duty.selectedInfo": "선택한 HTS: <strong>{code}</strong><span class=\"badge-hts\">관세율: {rate}</span>",
+        "duty.resultEquation":
+          "예상 과세가액 <strong>{totalValueUsd} USD</strong> × 관세율 <strong>{ratePct}</strong> = <strong>{dutyUsd} USD</strong>",
+        "duty.resultKrw":
+          "<br />예상 과세가액 <strong>{totalKrw} KRW</strong> / 예상 관세 <strong>{dutyKrw} KRW</strong> (환율 {fxRate} KRW/USD 기준)",
+        "duty.resultNoFx": "<br />* 환율 정보를 불러오지 못해 원화 계산을 표시하지 못했습니다.",
+        "email.title": "US HTS 코드와 관세 계산 내용을 이메일로 받아보시겠어요?",
+        "email.stepBadge": "Step 3 · Email",
+        "email.subtitle":
+          "지금까지 입력하신 상품 정보, 선택하신 HTS 코드, 그리고 방금 계산한 관세 금액을 한 번에 정리해서 메일 초안으로 만들어 드려요.",
+        "email.emailLabel": "이메일 주소",
+        "email.emailPlaceholder": "예: name@example.com",
+        "email.tokenLabel": "API Access Token",
+        "email.tokenPlaceholder": "X-Access-Token 헤더 값",
+        "email.previewButton": "이메일 미리보기 만들기",
+        "email.note": "* 실제 발송 전에, 아래서 메일 내용을 먼저 확인하실 수 있어요.",
+        "email.previewTitle": "이메일 미리보기",
+        "email.previewLoading": "이메일 내용을 준비하고 있어요...",
+        "email.sendButton": "이 내용으로 이메일 보내기",
+        "email.statusSending": "이메일을 보내는 중입니다...",
+        "email.statusSuccess": "이메일을 발송했어요. 받은 편지함을 확인해 주세요.",
+        "email.statusError": "이메일 발송 중 오류가 발생했습니다: {error}",
+        "alerts.needSelection": "먼저 HTS 코드를 선택하고 관세 계산까지 완료해 주세요.",
+        "alerts.needDuty": "관세 계산을 먼저 완료해 주세요.",
+        "alerts.emailRequired": "이메일 주소를 입력해 주세요.",
+        "alerts.emailFormat": "이메일 주소 형식을 다시 확인해 주세요.",
+        "alerts.needPreview": "먼저 이메일 미리보기를 생성해 주세요.",
+        "footer.disclaimer":
+          "* 본 서비스의 HTS 코드 및 관세율은 참고용으로 제공되며, 실제 세율 및 분류는 미국 CBP 및 관세당국의 최종 결정에 따릅니다. 본 정보에 기반한 모든 판단 및 책임은 사용자에게 있습니다.",
+        "tooltip.title": "코드 구조 / 분류 체계",
+        "tooltip.colCode": "코드 구조",
+        "tooltip.colMeaning": "의미",
+        "tooltip.loading": "코드 구조를 불러오는 중입니다...",
+        "tooltip.noData": "코드 구조 정보를 불러오지 못했습니다.",
+      },
+      "zh-CN": {
+        "lang.auto": "Automatic",
+        "lang.en": "영어",
+        "lang.ko": "한국어",
+        "lang.en": "영어",
+        "lang.zh": "中文",
+        "lang.es": "Español",
+        "lang.ja": "日本語",
+        "title.main": "美国 HTS 代码查找器",
+        "subtitle.main": "根据您输入的商品信息，推荐可能的美国 HTS 代码。",
+        "form.productNameLabel": "商品名 (Product Name)",
+        "form.productNamePlaceholder": "例：玉米",
+        "form.exporterHsLabel": "出口商 HS 代码（韩国，可选）",
+        "form.exporterHsPlaceholder": "例：1005.90",
+        "form.countryLabel": "原产国 (Country of Origin)",
+        "form.countryPlaceholder": "例：Korea",
+        "form.descriptionLabel": "商品描述 (Product Description)",
+        "form.descriptionPlaceholder": "例：未经加工的食用玉米",
+        "form.submitButton": "搜索 HTS 代码",
+        "results.sectionTitle": "HTS 代码推荐结果",
+        "results.badge": "LLM 候选列表",
+        "results.loading": "LLM 正在分析 HTS 候选...",
+        "results.noCandidates": "没有可推荐的 HTS 代码。",
+        "results.table.select": "选择",
+        "results.table.confidence": "置信度",
+        "results.table.code": "US HTS Code",
+        "results.table.title": "品目名",
+        "results.table.tariff": "关税率",
+        "results.table.reason": "分类说明",
+        "duty.title": "想知道大概要交多少关税吗？",
+        "duty.subtitle": "基于上面选择的 HTS 代码，输入数量和单价(USD)，快速估算关税。",
+        "duty.fxLoading": "正在获取汇率信息...",
+        "duty.fxError": "未能获取汇率信息。（暂时无法显示本币金额）",
+        "duty.fxInfo": "当前汇率：1 USD ≈ {rate} KRW{timestamp}",
+        "duty.selectPrompt": "还没有选择 HTS 代码，请在表格中选择一项。",
+        "duty.qty": "数量",
+        "duty.qtyPlaceholder": "例：100",
+        "duty.unitPrice": "单价 (USD $)",
+        "duty.unitPricePlaceholder": "例：50",
+        "duty.calcButton": "计算关税",
+        "duty.note":
+          "* 实际关税可能因报关内容、FTA 或附加税率等不同，此计算仅供参考。",
+        "duty.alertSelect": "请先在上方结果中选择一个 HTS 代码。",
+        "duty.alertInputs": "请输入有效的数量和单价(USD)。",
+        "duty.selectedInfo":
+          "已选 HTS: <strong>{code}</strong><span class=\"badge-hts\">关税率: {rate}</span>",
+        "duty.resultEquation":
+          "预估货值 <strong>{totalValueUsd} USD</strong> × 关税率 <strong>{ratePct}</strong> = <strong>{dutyUsd} USD</strong>",
+        "duty.resultKrw":
+          "<br />预估韩元金额：货值 <strong>{totalKrw} KRW</strong> / 关税 <strong>{dutyKrw} KRW</strong>（汇率 {fxRate} KRW/USD）",
+        "duty.resultNoFx": "<br />* 未能获取汇率，暂不显示韩元金额。",
+        "email.title": "想把 US HTS 代码和关税计算结果通过邮件接收吗？",
+        "email.stepBadge": "Step 3 · Email",
+        "email.subtitle": "将商品信息、选择的 HTS 代码和关税计算结果整理成邮件草稿发送给您。",
+        "email.emailLabel": "邮箱地址",
+        "email.emailPlaceholder": "例：name@example.com",
+        "email.tokenLabel": "API Access Token",
+        "email.tokenPlaceholder": "X-Access-Token 头部值",
+        "email.previewButton": "生成邮件预览",
+        "email.note": "* 发送前，可在下方先确认邮件内容。",
+        "email.previewTitle": "邮件预览",
+        "email.previewLoading": "正在准备邮件内容...",
+        "email.sendButton": "用此内容发送邮件",
+        "email.statusSending": "正在发送邮件...",
+        "email.statusSuccess": "邮件已发送，请检查收件箱。",
+        "email.statusError": "发送邮件时出错：{error}",
+        "alerts.needSelection": "请先选择 HTS 代码并完成关税计算。",
+        "alerts.needDuty": "请先完成关税计算。",
+        "alerts.emailRequired": "请输入邮箱地址。",
+        "alerts.emailFormat": "请检查邮箱地址格式。",
+        "alerts.needPreview": "请先生成邮件预览。",
+        "footer.disclaimer":
+          "* 本服务提供的 HTS 代码与关税率仅供参考，实际税率与分类以美国 CBP 及关务机关的最终决定为准。基于本信息的所有判断与责任由用户自行承担。",
+        "tooltip.title": "代码结构 / 分类体系",
+        "tooltip.colCode": "代码结构",
+        "tooltip.colMeaning": "含义",
+        "tooltip.loading": "正在获取代码结构...",
+        "tooltip.noData": "未能获取代码结构信息。",
+      },
+      "es-MX": {
+        "lang.auto": "Automatic",
+        "lang.en": "영어",
+        "lang.ko": "한국어",
+        "lang.en": "영어",
+        "lang.zh": "中文",
+        "lang.es": "Español",
+        "lang.ja": "日本語",
+        "title.main": "Buscador de Códigos HTS de EE. UU.",
+        "subtitle.main": "Recomendamos códigos HTS de EE. UU. según la información de tu producto.",
+        "form.productNameLabel": "Nombre del producto (Product Name)",
+        "form.productNamePlaceholder": "Ej.: maíz",
+        "form.exporterHsLabel": "Código HS del exportador (Corea, opcional)",
+        "form.exporterHsPlaceholder": "Ej.: 1005.90",
+        "form.countryLabel": "País de origen (Country of Origin)",
+        "form.countryPlaceholder": "Ej.: Korea",
+        "form.descriptionLabel": "Descripción del producto (Product Description)",
+        "form.descriptionPlaceholder": "Ej.: maíz para consumo, sin cocinar",
+        "form.submitButton": "Buscar código HTS",
+        "results.sectionTitle": "Resultados de códigos HTS sugeridos",
+        "results.badge": "Lista de candidatos LLM",
+        "results.loading": "Analizando candidatos HTS con LLM...",
+        "results.noCandidates": "No hay códigos HTS para recomendar.",
+        "results.table.select": "Elegir",
+        "results.table.confidence": "Confianza",
+        "results.table.code": "US HTS Code",
+        "results.table.title": "Nombre del producto",
+        "results.table.tariff": "Tasa arancelaria",
+        "results.table.reason": "Descripción de la clasificación",
+        "duty.title": "¿Quieres saber cuánto podrías pagar de arancel?",
+        "duty.subtitle":
+          "Con el código HTS elegido arriba, ingresa cantidad y precio unitario (USD) para estimar el arancel.",
+        "duty.fxLoading": "Cargando tipo de cambio...",
+        "duty.fxError": "No pudimos obtener el tipo de cambio. (No se mostrará el monto en moneda local.)",
+        "duty.fxInfo": "Tipo de cambio: 1 USD ≈ {rate} KRW{timestamp}",
+        "duty.selectPrompt": "Aún no has elegido un código HTS. Selecciona uno en la tabla.",
+        "duty.qty": "Cantidad",
+        "duty.qtyPlaceholder": "Ej.: 100",
+        "duty.unitPrice": "Precio unitario (USD $)",
+        "duty.unitPricePlaceholder": "Ej.: 50",
+        "duty.calcButton": "Calcular arancel",
+        "duty.note":
+          "* El arancel real puede variar según la declaración, FTA o tasas adicionales. Este cálculo es solo de referencia.",
+        "duty.alertSelect": "Primero elige un código HTS en los resultados.",
+        "duty.alertInputs": "Ingresa cantidad y precio unitario (USD) válidos.",
+        "duty.selectedInfo":
+          "HTS elegido: <strong>{code}</strong><span class=\"badge-hts\">Tasa: {rate}</span>",
+        "duty.resultEquation":
+          "Valor imponible <strong>{totalValueUsd} USD</strong> × tasa <strong>{ratePct}</strong> = <strong>{dutyUsd} USD</strong>",
+        "duty.resultKrw":
+          "<br />En KRW: valor <strong>{totalKrw} KRW</strong> / arancel <strong>{dutyKrw} KRW</strong> (tipo {fxRate} KRW/USD)",
+        "duty.resultNoFx": "<br />* No se pudo obtener el tipo de cambio; no se muestra en KRW.",
+        "email.title": "¿Quieres recibir por correo el código HTS y el cálculo del arancel?",
+        "email.stepBadge": "Step 3 · Email",
+        "email.subtitle":
+          "Reunimos la info del producto, el código HTS elegido y el cálculo del arancel en un borrador de correo.",
+        "email.emailLabel": "Correo electrónico",
+        "email.emailPlaceholder": "Ej.: name@example.com",
+        "email.tokenLabel": "API Access Token",
+        "email.tokenPlaceholder": "Valor del encabezado X-Access-Token",
+        "email.previewButton": "Crear vista previa del correo",
+        "email.note": "* Antes de enviar, revisa el contenido del correo aquí.",
+        "email.previewTitle": "Vista previa del correo",
+        "email.previewLoading": "Preparando el contenido del correo...",
+        "email.sendButton": "Enviar correo con este contenido",
+        "email.statusSending": "Enviando el correo...",
+        "email.statusSuccess": "Correo enviado. Revisa tu bandeja de entrada.",
+        "email.statusError": "Error al enviar el correo: {error}",
+        "alerts.needSelection": "Elige un código HTS y completa el cálculo del arancel primero.",
+        "alerts.needDuty": "Primero completa el cálculo del arancel.",
+        "alerts.emailRequired": "Ingresa una dirección de correo.",
+        "alerts.emailFormat": "Revisa el formato del correo electrónico.",
+        "alerts.needPreview": "Primero genera la vista previa del correo.",
+        "footer.disclaimer":
+          "* Los códigos HTS y tasas mostrados son de referencia. Las tasas y clasificaciones finales dependen del CBP de EE. UU. y autoridades aduaneras. Todas las decisiones basadas en esta información son responsabilidad del usuario.",
+        "tooltip.title": "Estructura del código / Clasificación",
+        "tooltip.colCode": "Estructura",
+        "tooltip.colMeaning": "Significado",
+        "tooltip.loading": "Cargando estructura del código...",
+        "tooltip.noData": "No pudimos obtener la estructura del código.",
+      },
+      "ja-JP": {
+        "lang.auto": "Automatic",
+        "lang.en": "영어",
+        "lang.ko": "한국어",
+        "lang.en": "영어",
+        "lang.zh": "中文",
+        "lang.es": "Español",
+        "lang.ja": "日本語",
+        "title.main": "US HTS コード検索",
+        "subtitle.main": "入力した商品情報をもとに、米国 HTS 候補コードをおすすめします。",
+        "form.productNameLabel": "商品名 (Product Name)",
+        "form.productNamePlaceholder": "例: トウモロコシ",
+        "form.exporterHsLabel": "輸出者 HS コード（韓国、任意）",
+        "form.exporterHsPlaceholder": "例: 1005.90",
+        "form.countryLabel": "原産国 (Country of Origin)",
+        "form.countryPlaceholder": "例: Korea",
+        "form.descriptionLabel": "商品説明 (Product Description)",
+        "form.descriptionPlaceholder": "例: 調理していない食用トウモロコシ",
+        "form.submitButton": "HTS コードを検索",
+        "results.sectionTitle": "HTS コードの推薦結果",
+        "results.badge": "LLM 候補リスト",
+        "results.loading": "LLM が HTS 候補を解析中...",
+        "results.noCandidates": "推薦できる HTS コードがありません。",
+        "results.table.select": "選択",
+        "results.table.confidence": "信頼度",
+        "results.table.code": "US HTS Code",
+        "results.table.title": "品目名",
+        "results.table.tariff": "関税率",
+        "results.table.reason": "分類の説明",
+        "duty.title": "どれくらい関税がかかるか気になりますか？",
+        "duty.subtitle":
+          "上で選んだ HTS コードをもとに、数量と単価(USD)を入力して関税を簡単に試算できます。",
+        "duty.fxLoading": "為替レートを取得しています...",
+        "duty.fxError": "為替レートを取得できませんでした。（現地通貨表示は一時停止）",
+        "duty.fxInfo": "現在のレート: 1 USD ≈ {rate} KRW{timestamp}",
+        "duty.selectPrompt": "まだ HTS コードを選択していません。表から1つ選んでください。",
+        "duty.qty": "数量",
+        "duty.qtyPlaceholder": "例: 100",
+        "duty.unitPrice": "単価 (USD $)",
+        "duty.unitPricePlaceholder": "例: 50",
+        "duty.calcButton": "関税を計算",
+        "duty.note":
+          "* 実際の関税は申告内容、FTA、追加税率などで変わります。これは参考用シミュレーションです。",
+        "duty.alertSelect": "まず結果表から HTS コードを選んでください。",
+        "duty.alertInputs": "数量と単価(USD)を正しく入力してください。",
+        "duty.selectedInfo":
+          "選択した HTS: <strong>{code}</strong><span class=\"badge-hts\">関税率: {rate}</span>",
+        "duty.resultEquation":
+          "課税価格 <strong>{totalValueUsd} USD</strong> × 関税率 <strong>{ratePct}</strong> = <strong>{dutyUsd} USD</strong>",
+        "duty.resultKrw":
+          "<br />KRW換算: 課税価格 <strong>{totalKrw} KRW</strong> / 関税 <strong>{dutyKrw} KRW</strong>（レート {fxRate} KRW/USD）",
+        "duty.resultNoFx": "<br />* 為替レートを取得できず、KRW表示を省略しました。",
+        "email.title": "US HTS コードと関税計算をメールで受け取りますか？",
+        "email.stepBadge": "Step 3 · Email",
+        "email.subtitle":
+          "商品情報・選択した HTS コード・計算した関税額をまとめて、メール下書きを作成します。",
+        "email.emailLabel": "メールアドレス",
+        "email.emailPlaceholder": "例: name@example.com",
+        "email.tokenLabel": "API Access Token",
+        "email.tokenPlaceholder": "X-Access-Token ヘッダー値",
+        "email.previewButton": "メールのプレビューを作成",
+        "email.note": "* 送信前に、下でメール内容を確認できます。",
+        "email.previewTitle": "メールプレビュー",
+        "email.previewLoading": "メール内容を準備しています...",
+        "email.sendButton": "この内容でメール送信",
+        "email.statusSending": "メール送信中です...",
+        "email.statusSuccess": "メールを送信しました。受信箱を確認してください。",
+        "email.statusError": "メール送信中にエラーが発生しました: {error}",
+        "alerts.needSelection": "HTS コードを選び、関税計算を完了してください。",
+        "alerts.needDuty": "先に関税計算を完了してください。",
+        "alerts.emailRequired": "メールアドレスを入力してください。",
+        "alerts.emailFormat": "メールアドレスの形式を確認してください。",
+        "alerts.needPreview": "先にメールプレビューを作成してください。",
+        "footer.disclaimer":
+          "* 本サービスの HTS コードと税率は参考情報です。実際の税率・分類は米国 CBP など当局の最終決定に従います。本情報に基づく判断・責任は利用者にあります。",
+        "tooltip.title": "コード構造 / 分類体系",
+        "tooltip.colCode": "コード構造",
+        "tooltip.colMeaning": "意味",
+        "tooltip.loading": "コード構造を読み込んでいます...",
+        "tooltip.noData": "コード構造情報を取得できませんでした。",
+      },
+    };
+
+    function t(key, replacements = {}) {
+      const dict = I18N[currentLang] || I18N["ko-KR"];
+      let value = dict[key] || I18N["ko-KR"][key] || key;
+      Object.keys(replacements).forEach((k) => {
+        value = value.replace(new RegExp(`{${k}}`, "g"), replacements[k]);
+      });
+      return value;
+    }
+
+    function applyTranslations() {
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        const key = el.getAttribute("data-i18n");
+        const value = t(key);
+        if (el.classList.contains("badge-step")) {
+          el.textContent = value;
+        } else {
+          el.textContent = value;
+        }
+      });
+
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        const value = t(key);
+        el.setAttribute("placeholder", value);
+      });
+    }
+
+    function resolveLanguage(langCode) {
+      if (!langCode || langCode === "auto") {
+        const nav = (navigator.language || navigator.userLanguage || "").toLowerCase();
+        if (nav.startsWith("en")) return "en-US";
+        if (nav.startsWith("ko")) return "ko-KR";
+        if (nav.startsWith("zh")) return "zh-CN";
+        if (nav.startsWith("es")) return "es-MX";
+        if (nav.startsWith("ja")) return "ja-JP";
+        return "ko-KR";
+      }
+      if (langCode.startsWith("ko")) return "ko-KR";
+      if (langCode.startsWith("zh")) return "zh-CN";
+      if (langCode.startsWith("es")) return "es-MX";
+      if (langCode.startsWith("ja")) return "ja-JP";
+      return "ko-KR";
+    }
+
+    function updateLangButtonLabel(value) {
+      if (langButtonLabel) {
+        langButtonLabel.textContent = LANG_LABELS[value] || value;
+      }
+      langOptions.forEach((opt) => {
+        opt.classList.toggle("active", opt.getAttribute("data-lang") === value);
+      });
+    }
+
+    let selectedLangPreference = localStorage.getItem("hts_finder_lang") || "auto";
+    let currentLang = resolveLanguage(selectedLangPreference);
+
+    function setLanguage(langCode, { persist = true } = {}) {
+      selectedLangPreference = langCode;
+      currentLang = resolveLanguage(langCode);
+      if (persist) {
+        localStorage.setItem("hts_finder_lang", langCode);
+      }
+      document.documentElement.setAttribute("lang", currentLang);
+      updateLangButtonLabel(langCode === "auto" ? "auto" : currentLang);
+      applyTranslations();
+      refreshDynamicTextsForLanguage();
+      if (typeof window.changeLanguage === "function") {
+        window.changeLanguage(currentLang);
+      } else if (typeof window.handleLanguageChange === "function") {
+        window.handleLanguageChange(currentLang);
+      }
+    }
+
+    function closeLangMenu() {
+      if (langMenu) {
+        langMenu.classList.remove("open");
+      }
+      if (langButton) {
+        langButton.setAttribute("aria-expanded", "false");
+      }
+    }
+
+    function toggleLangMenu() {
+      if (!langMenu || !langButton) return;
+      const willOpen = !langMenu.classList.contains("open");
+      langMenu.classList.toggle("open");
+      langButton.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    }
+
+    setLanguage(selectedLangPreference, { persist: false });
+
+    if (langButton && langMenu) {
+      langButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleLangMenu();
+      });
+
+      langOptions.forEach((opt) => {
+        opt.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const langCode = opt.getAttribute("data-lang");
+          setLanguage(langCode);
+          closeLangMenu();
+        });
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!langMenu.contains(e.target) && !langButton.contains(e.target)) {
+          closeLangMenu();
+        }
+      });
+    }
     function formatNumber(n) {
       if (isNaN(n)) return "";
       return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -622,27 +1448,62 @@
     }
 
     // 백엔드에서 USD-KRW 환율 가져오기
+    
+
+    
+
     async function fetchFxRate() {
+      fxStatus = "loading";
       try {
         const res = await fetch("http://127.0.0.1:8000/api/exchange-rate/usd-krw");
         const data = await res.json();
+
         if (data.rate) {
+
           usdKrwRate = data.rate;
-          const ts = data.timestamp ? ` (업데이트: ${new Date(data.timestamp).toLocaleString()})` : "";
-          fxInfoEl.textContent =
-            `현재 적용 환율: 1 USD ≈ ${usdKrwRate.toFixed(2)}원${ts}`;
+
+          fxStatus = "ok";
+
+          lastFxTimestamp = data.timestamp || null;
+
+          const ts = lastFxTimestamp ? ` (${new Date(lastFxTimestamp).toLocaleString()})` : "";
+
+          fxInfoEl.textContent = t("duty.fxInfo", {
+
+            rate: usdKrwRate.toFixed(2),
+
+            timestamp: ts,
+
+          });
+
         } else {
+
           usdKrwRate = null;
-          const ts = data.timestamp ? ` (업데이트: ${new Date(data.timestamp).toLocaleString()})` : "";
-          fxInfoEl.textContent =
-            `환율 정보를 불러오지 못했습니다. (임시로 원화 환산은 표시되지 않을 수 있습니다)${ts}`;
+
+          fxStatus = "error";
+
+          lastFxTimestamp = data.timestamp || null;
+
+          const ts = lastFxTimestamp ? ` (${new Date(lastFxTimestamp).toLocaleString()})` : "";
+
+          fxInfoEl.textContent = t("duty.fxError", { timestamp: ts });
+
         }
-        } catch (err) {
+
+      } catch (err) {
+
         console.error(err);
+
         usdKrwRate = null;
-        fxInfoEl.textContent =
-          "환율 정보를 불러오지 못했습니다. (임시로 원화 환산은 표시되지 않을 수 있습니다)";
+
+        fxStatus = "error";
+
+        lastFxTimestamp = null;
+
+        fxInfoEl.textContent = t("duty.fxError");
+
       }
+
     }
 
     // 페이지 로딩 시 환율 먼저 가져오기
@@ -650,11 +1511,9 @@
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      resultsEl.innerHTML =
-        '<span class="loading-text">LLM이 HTS 후보를 분석하는 중입니다...</span>';
+      resultsEl.innerHTML = `<span class="loading-text">${t("results.loading")}</span>`;
       dutyResultEl.textContent = "";
-      selectedInfoEl.textContent =
-        "아직 HTS 코드를 선택하지 않으셨어요. 표에서 하나를 선택해 주세요.";
+      selectedInfoEl.textContent = t("duty.selectPrompt");
       emailSection.classList.add("hidden");
       emailPreviewEl.classList.add("hidden");
       emailPreviewEl.innerHTML = "";
@@ -664,6 +1523,7 @@
       lastSelectedIndex = -1;
       lastDutyCalc = null;
       lastEmailDraft = null;
+      lastQueryPrompt = "";
 
       const payload = {
         product_name: document.getElementById("product_name").value,
@@ -680,6 +1540,7 @@
         });
 
         const data = await res.json();
+        lastQueryPrompt = data.query_prompt || "";
 
         if (data.error) {
           resultsEl.innerHTML =
@@ -691,15 +1552,14 @@
           return;
         }
 
-        const candidates = data.candidates || [];
+        const candidates = data.items || data.candidates || [];
         lastCandidates = candidates;
 
         // 후보 title/reason 한국어 번역
         await translateCandidatesToKorean(lastCandidates);
 
         if (candidates.length === 0) {
-          resultsEl.innerHTML =
-            '<span class="loading-text">추천된 HTS 코드가 없습니다.</span>';
+          resultsEl.innerHTML = `<span class="loading-text">${t("results.noCandidates")}</span>`;
           dutySection.classList.add("hidden");
           return;
         }
@@ -709,12 +1569,12 @@
           <table>
             <thead>
               <tr>
-                <th>선택</th>
-                <th>신뢰도</th>
-                <th>HTS Code</th>
-                <th>품목명</th>
-                <th>관세율</th>
-                <th>분류 설명</th>
+                <th>${t("results.table.select")}</th>
+                <th>${t("results.table.confidence")}</th>
+                <th>${t("results.table.code")}</th>
+                <th>${t("results.table.title")}</th>
+                <th>${t("results.table.tariff")}</th>
+                <th>${t("results.table.reason")}</th>
               </tr>
             </thead>
             <tbody>
@@ -723,7 +1583,7 @@
         candidates.forEach((c, idx) => {
           const confText =
             c.confidence !== undefined && c.confidence !== null
-              ? `${c.confidence}%`
+              ? `${(Number(c.confidence) * 100).toFixed(0)}%`
               : "";
           tableHtml += `
             <tr>
@@ -734,8 +1594,14 @@
               <td class="hts-code-cell" data-hts="${c.hts_code || ""}">
                 ${c.hts_code || ""}
               </td>
-              <td>${c.title || ""}</td>
-              <td>${c.estimated_tariff_rate || ""}</td>
+              <td>${
+                c.title
+                  ? `<a class="hts-link" href="https://hts.usitc.gov/search?query=%22${encodeURIComponent(
+                      c.hts_code || ""
+                    )}%22" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">${c.title}</a>`
+                  : ""
+              }</td>
+              <td>${c.tariff ?? c.estimated_tariff_rate ?? ""}</td>
               <td>${c.reason || ""}</td>
             </tr>
           `;
@@ -743,6 +1609,7 @@
 
         tableHtml += "</tbody></table>";
         resultsEl.innerHTML = tableHtml;
+        updateResultsHeaders();
 
         // 관세 시뮬레이션 UI 보이기 + 살짝 스크롤
         dutySection.classList.remove("hidden");
@@ -757,10 +1624,7 @@
             const item = lastCandidates[idx];
             if (!item) return;
             lastSelectedIndex = idx;
-            const rateStr = item.estimated_tariff_rate || "N/A";
-            selectedInfoEl.innerHTML =
-              `선택된 HTS: <strong>${item.hts_code || ""}</strong>` +
-              `<span class="badge-hts">관세율: ${rateStr}</span>`;
+            renderSelectedInfo();
             dutyResultEl.textContent = "";
             lastDutyCalc = null;
             emailSection.classList.add("hidden");
@@ -785,18 +1649,18 @@
 
     function buildTooltipHtml(segments) {
       if (!segments || !segments.length) {
-        return "코드 구조 정보를 불러오지 못했습니다.";
+        return t("tooltip.noData");
       }
 
       let html = `
         <div style="margin-bottom:4px; font-weight:600; font-size:11px;">
-          코드 구조 / 분류 체계
+          ${t("tooltip.title")}
         </div>
         <table>
           <thead>
             <tr>
-              <th style="width:90px;">코드 구조</th>
-              <th>의미</th>
+              <th style="width:90px;">${t("tooltip.colCode")}</th>
+              <th>${t("tooltip.colMeaning")}</th>
             </tr>
           </thead>
           <tbody>
@@ -850,7 +1714,7 @@
         cell.addEventListener("mouseenter", async (e) => {
           if (!htsCode) return;
 
-          htsTooltip.innerHTML = "코드 구조를 불러오는 중입니다...";
+          htsTooltip.innerHTML = t("tooltip.loading");
           htsTooltip.classList.add("visible");
           positionTooltip(e);
 
@@ -915,6 +1779,82 @@
       }
     }
 
+    function renderSelectedInfo() {
+      if (lastSelectedIndex >= 0 && lastCandidates[lastSelectedIndex]) {
+        const item = lastCandidates[lastSelectedIndex];
+        const rateStr = item.estimated_tariff_rate || item.tariff || "N/A";
+        selectedInfoEl.innerHTML = t("duty.selectedInfo", {
+          code: item.hts_code || "",
+          rate: rateStr,
+        });
+      } else {
+        selectedInfoEl.textContent = t("duty.selectPrompt");
+      }
+    }
+
+    function renderDutyResult() {
+      if (!lastDutyCalc) {
+        dutyResultEl.textContent = "";
+        return;
+      }
+
+      const {
+        totalValueUsd,
+        dutyUsd,
+        ratePct,
+        totalKrw,
+        dutyKrw,
+        usdKrwRate: storedFx,
+      } = lastDutyCalc;
+
+      let resultText = t("duty.resultEquation", {
+        totalValueUsd: formatNumber(totalValueUsd),
+        ratePct,
+        dutyUsd: formatNumber(dutyUsd),
+      });
+
+      if (storedFx) {
+        resultText += t("duty.resultKrw", {
+          totalKrw: formatNumber(totalKrw),
+          dutyKrw: formatNumber(dutyKrw),
+          fxRate: storedFx.toFixed ? storedFx.toFixed(2) : storedFx,
+        });
+      } else {
+        resultText += t("duty.resultNoFx");
+      }
+
+      dutyResultEl.innerHTML = resultText;
+    }
+
+    function updateResultsHeaders() {
+      const table = resultsEl.querySelector("table");
+      if (!table) return;
+      const headers = table.querySelectorAll("thead th");
+      if (headers.length >= 6) {
+        headers[0].textContent = t("results.table.select");
+        headers[1].textContent = t("results.table.confidence");
+        headers[2].textContent = t("results.table.code");
+        headers[3].textContent = t("results.table.title");
+        headers[4].textContent = t("results.table.tariff");
+        headers[5].textContent = t("results.table.reason");
+      }
+    }
+
+    function refreshDynamicTextsForLanguage() {
+      if (fxStatus === "ok" && usdKrwRate) {
+        const ts = lastFxTimestamp ? ` (${new Date(lastFxTimestamp).toLocaleString()})` : "";
+        fxInfoEl.textContent = t("duty.fxInfo", { rate: usdKrwRate.toFixed(2), timestamp: ts });
+      } else if (fxStatus === "error") {
+        fxInfoEl.textContent = t("duty.fxError");
+      } else {
+        fxInfoEl.textContent = t("duty.fxLoading");
+      }
+
+      renderSelectedInfo();
+      renderDutyResult();
+      updateResultsHeaders();
+    }
+
     calcBtn.addEventListener("click", () => {
       const radios = document.getElementsByName("hts_choice");
       let selectedIndex = -1;
@@ -923,7 +1863,7 @@
       });
 
       if (selectedIndex < 0) {
-        alert("먼저 표에서 HTS 코드를 하나 선택해 주세요.");
+        alert(t("duty.alertSelect"));
         return;
       }
 
@@ -931,23 +1871,19 @@
       const unitPrice = parseFloat(unitPriceInput.value);
 
       if (!qty || qty <= 0 || !unitPrice || unitPrice < 0) {
-        alert("수량과 단가(USD)를 올바르게 입력해 주세요.");
+        alert(t("duty.alertInputs"));
         return;
       }
 
       const item = lastCandidates[selectedIndex];
-      const rate = parseRate(item.estimated_tariff_rate);
+      const rate = parseRate(item.estimated_tariff_rate || item.tariff);
       const totalValueUsd = qty * unitPrice;
       const dutyUsd = totalValueUsd * rate;
 
       const ratePct =
         item.estimated_tariff_rate ||
+        item.tariff ||
         (rate ? (rate * 100).toFixed(2) + "%" : "N/A");
-
-      let resultText =
-        `예상 과세가격: <strong>${formatNumber(totalValueUsd)} USD</strong>` +
-        ` × 관세율 <strong>${ratePct}</strong> = ` +
-        `<strong>${formatNumber(dutyUsd)} USD</strong> (예상 관세)`;
 
       let totalKrw = null;
       let dutyKrw = null;
@@ -955,16 +1891,7 @@
       if (usdKrwRate) {
         totalKrw = totalValueUsd * usdKrwRate;
         dutyKrw = dutyUsd * usdKrwRate;
-        resultText +=
-          `<br />≈ 과세가격 <strong>${formatNumber(totalKrw)}원</strong>` +
-          ` / 관세 <strong>${formatNumber(dutyKrw)}원</strong>` +
-          ` (환율 ${usdKrwRate.toFixed(2)}원/USD 기준)`;
-      } else {
-        resultText +=
-          "<br />* 환율 정보를 불러오지 못해 원화 환산은 표시되지 않습니다.";
       }
-
-      dutyResultEl.innerHTML = resultText;
 
       // 상태 저장 (이후 이메일 Step에서 사용)
       lastSelectedIndex = selectedIndex;
@@ -978,6 +1905,8 @@
         dutyKrw,
         usdKrwRate,
       };
+
+      renderDutyResult();
 
       // 관세 계산이 끝나면 이메일 Step 카드 노출 + 스크롤 다운
       emailSection.classList.remove("hidden");
@@ -995,22 +1924,22 @@
     // 이메일 미리보기 버튼 클릭
     emailPreviewBtn.addEventListener("click", async () => {
       if (lastSelectedIndex < 0 || !lastCandidates[lastSelectedIndex]) {
-        alert("먼저 HTS 코드를 선택하고 관세 계산까지 완료해 주세요.");
+        alert(t("alerts.needSelection"));
         return;
       }
       if (!lastDutyCalc) {
-        alert("관세 계산을 먼저 완료해 주세요.");
+        alert(t("alerts.needDuty"));
         return;
       }
 
       const emailTo = (emailToInput.value || "").trim();
       if (!emailTo) {
-        alert("이메일 주소를 입력해 주세요.");
+        alert(t("alerts.emailRequired"));
         return;
       }
       // 아주 간단한 이메일 형식 체크
       if (!/.+@.+\..+/.test(emailTo)) {
-        alert("이메일 주소 형식을 다시 확인해 주세요.");
+        alert(t("alerts.emailFormat"));
         return;
       }
 
@@ -1028,10 +1957,11 @@
         country_of_origin: countryOfOrigin,
 
         email_to: emailTo,
+        query_prompt: lastQueryPrompt,
 
         hts_code: selected.hts_code || "",
         hts_title: selected.title || "",
-        estimated_tariff_rate: selected.estimated_tariff_rate || "",
+        estimated_tariff_rate: selected.estimated_tariff_rate || selected.tariff || "",
         confidence: selected.confidence ?? null,
 
         qty: lastDutyCalc.qty,
@@ -1045,7 +1975,7 @@
       };
 
       emailPreviewEl.classList.remove("hidden");
-      emailPreviewEl.innerHTML = "이메일 내용을 준비하고 있어요...";
+      emailPreviewEl.innerHTML = t("email.previewLoading");
       emailSendBtn.classList.add("hidden");
       emailSendStatusEl.classList.add("hidden");
       emailSendStatusEl.textContent = "";
@@ -1070,7 +2000,7 @@
         const body = data.body || "";
 
         emailPreviewEl.innerHTML = `
-          <div class="email-preview-header">이메일 미리보기</div>
+          <div class="email-preview-header">${t("email.previewTitle")}</div>
           <div class="email-preview-meta">
             To: ${to}<br/>
             Subject: ${subject}
@@ -1097,7 +2027,7 @@
     // 이메일 발송 버튼 클릭
     emailSendBtn.addEventListener("click", async () => {
       if (!lastEmailDraft) {
-        alert("먼저 이메일 미리보기를 생성해 주세요.");
+        alert(t("alerts.needPreview"));
         return;
       }
 
@@ -1107,7 +2037,7 @@
       }
 
       emailSendStatusEl.classList.remove("hidden");
-      emailSendStatusEl.textContent = "이메일을 보내는 중입니다...";
+      emailSendStatusEl.textContent = t("email.statusSending");
 
       try {
         const res = await fetch("http://127.0.0.1:8000/api/send_email", {
@@ -1125,15 +2055,15 @@
         const data = await res.json();
         if (data.error) {
           emailSendStatusEl.textContent =
-            "이메일 발송 중 오류가 발생했습니다: " + data.error;
+            t("email.statusError", { error: data.error });
         } else {
           emailSendStatusEl.textContent =
-            "이메일을 발송했어요. 받은 편지함을 확인해 주세요.";
+            t("email.statusSuccess");
         }
       } catch (err) {
         console.error(err);
         emailSendStatusEl.textContent =
-          "이메일 발송 중 오류가 발생했습니다: " + String(err);
+          t("email.statusError", { error: String(err) });
       }
     });
   </script>
