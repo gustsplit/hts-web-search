@@ -630,7 +630,11 @@ HTS 코드: {req.hts_code}
 
 @app.post("/api/preview_email")
 def preview_email(req: EmailPreviewRequest):
-    exporter_hs_display = req.exporter_hs.strip() if req.exporter_hs else "(미입력)"
+    # Use the correct field name from the model and allow legacy payloads.
+    exporter_value = getattr(req, "exporter_hts", None)
+    if exporter_value is None:
+        exporter_value = getattr(req, "exporter_hs", None)  # backward compatibility
+    exporter_hs_display = exporter_value.strip() if exporter_value else "(미입력)"
 
     def fmt_money(v: Optional[float], currency: str = "USD") -> str:
         if v is None:
