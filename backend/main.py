@@ -269,6 +269,62 @@ def read_root():
     return {"message": "HTS Web PoC Backend (Gemini) is running"}
 
 
+# ================== USITC HTS Verification ==================
+
+def fetch_usitc_codes(hs6: str) -> List[str]:
+    """
+    USITC API를 호출하여 해당 6자리 HS 코드 하위의 유효한 HTS 코드 목록을 가져옴.
+    """
+    # 6자리만 남기고 점(.) 등 제거
+    clean_hs6 = re.sub(r"[^0-9]", "", hs6)[:6]
+    if len(clean_hs6) < 6:
+        return []
+
+    # API 호출 파라미터 준비
+    # from: 6자리 (예: 847170)
+    # to: 6자리 + .99.99 (예: 847170.99.99) - 사용자 요청 포맷 준수
+    # 실제 API 동작 확인을 위해 점을 포함한 포맷으로 시도
+    # 보통 HTS API는 점이 없는 포맷이나 있는 포맷 둘 다 지원할 수 있으나,
+    # 사용자 가이드에 따라 .99.99를 붙임.
+    
+    # 6자리를 4.2 포맷으로 변환 (예: 8471.70)
+    formatted_hs6 = f"{clean_hs6[:4]}.{clean_hs6[4:]}"
+    
+    # API는 from 파라미터도 10자리 포맷을 선호하는 것으로 보임 (테스트 결과)
+    # 예: 8471.70 -> 8471.70.00.00
+    from_code = f"{formatted_hs6}.00.00"
+    to_code = f"{formatted_hs6}.99.99"
+    
+    url = "https://hts.usitc.gov/reststop/exportList"
+    params = {
+        "format": "JSON",
+        "from": from_code,
+        "to": to_code,
+        "styles": "false"
+    }
+    
+    try:
+        # 타임아웃 5초 설정
+        resp = requests.get(url, params=params, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        # 응답 구조에서 hts_no 추출
+        # 응답 예시: [{"htsno": "8471.70.10.00", ...}, ...]
+        valid_codes = []
+        for item in data:
+            code = item.get("htsno")
+            if code:
+                # 비교를 위해 점 제거한 버전도 고려할 수 있으나,
+                # 여기서는 API가 리턴한 포맷(보통 점 포함)을 그대로 리스트업
+                valid_codes.append(code)
+                
+        return valid_codes
+        
+    except Exception as e:
+        logger.warning(f"Failed to fetch USITC codes for {hs6}: {e}")
+        return []
+
 # ================== HTS 코드 추천 API ==================
 
 @app.post("/api/search_hts")
@@ -309,6 +365,91 @@ DO NOT add any explanation before or after the JSON.
         candidates_raw = json.loads(cleaned_json_str)
         validated = parse_obj_as(List[HTSCandidate], candidates_raw)
         candidates = [c.dict() for c in validated]
+
+        # ---------------------------------------------------------
+        # [검증 로직 추가]
+        # 1. 후보군 중 USITC에 실제로 존재하지 않는 코드가 있는지 확인
+        # 2. 없으면 해당 6자리 대역의 유효 코드를 조회하여 재검색(Re-prompt)
+        # ---------------------------------------------------------
+        
+        # 검증 대상 6자리 코드 수집
+        hs6_map = {} # { "847170": ["8471.70.10.00", ...] }
+        
+        needs_correction = False
+        
+        for cand in candidates:
+            code = cand["hts_code"]
+            clean_code = re.sub(r"[^0-9]", "", code)
+            
+            # 6자리 미만이면 검증 불가 (혹은 잘못된 코드)
+            if len(clean_code) < 6:
+                continue
+                
+            hs6 = clean_code[:6]
+            
+            # 이미 조회한 적 없으면 API 호출
+            if hs6 not in hs6_map:
+                valid_list = fetch_usitc_codes(hs6)
+                # API 호출 실패시 빈 리스트일 수 있음 -> 이 경우 검증 스킵(보수적 접근)
+                # 하지만 빈 리스트가 '진짜 없음'일 수도 있음. 
+                # 여기서는 API 오류가 아니라면 신뢰한다고 가정.
+                hs6_map[hs6] = valid_list
+            
+            # 유효성 체크
+            # API에서 가져온 코드는 점이 있을 수 있음. 비교를 위해 둘 다 점 제거 후 비교
+            valid_clean_set = {re.sub(r"[^0-9]", "", vc) for vc in hs6_map[hs6]}
+            
+            if clean_code not in valid_clean_set and hs6_map[hs6]:
+                # 유효한 코드가 있는데, 추천된 코드가 그 안에 없다면 -> 없는 코드
+                needs_correction = True
+                cand["_invalid"] = True # 마킹
+                
+        if needs_correction:
+            logger.info("Invalid HTS codes detected. Re-prompting with valid codes...")
+            
+            # 재질문 프롬프트 구성
+            # 유효하지 않은 코드가 포함된 6자리 대역의 '실제 존재하는 코드' 목록을 제공
+            
+            correction_context = ""
+            for hs6, valid_codes in hs6_map.items():
+                if not valid_codes:
+                    continue
+                # 해당 6자리 대역의 유효 코드 나열
+                correction_context += f"\nValid codes for HS {hs6}: {', '.join(valid_codes)}"
+            
+            re_prompt = f"""
+The previous suggestions included invalid HTS codes that do not exist in the USITC database.
+Please re-evaluate and suggest the best 3 to 5 HTS codes ONLY from the valid codes listed below.
+
+{correction_context}
+
+Original Information:
+- Product name: {req.product_name}
+- Description: {req.description}
+
+For each candidate, return a JSON object with:
+- hts_code (string)
+- title (short HTS description)
+- estimated_tariff_rate (e.g. "0%", "4%", or "N/A")
+- reason (short explanation in English)
+- confidence (integer 0–100, how likely this HTS code is correct)
+
+Return ONLY a JSON array.
+DO NOT add any markdown code fences like ``` or ```json.
+DO NOT add any explanation before or after the JSON.
+"""
+            # 재호출
+            response_retry = model.generate_content(re_prompt)
+            raw_text_retry = response_retry.text or ""
+            cleaned_json_retry = extract_json(raw_text_retry)
+            
+            candidates_retry_raw = json.loads(cleaned_json_retry)
+            validated_retry = parse_obj_as(List[HTSCandidate], candidates_retry_raw)
+            candidates = [c.dict() for c in validated_retry]
+            
+            logger.info("Re-prompt successful. Updated candidates.")
+
+        # ---------------------------------------------------------
 
         # 검색 로그 저장
         log_search(req, candidates)
